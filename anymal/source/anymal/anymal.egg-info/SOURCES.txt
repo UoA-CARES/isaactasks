@@ -1,0 +1,10 @@
+pyproject.toml
+setup.py
+anymal/__init__.py
+anymal/ui_extension_example.py
+anymal.egg-info/PKG-INFO
+anymal.egg-info/SOURCES.txt
+anymal.egg-info/dependency_links.txt
+anymal.egg-info/not-zip-safe
+anymal.egg-info/requires.txt
+anymal.egg-info/top_level.txt
