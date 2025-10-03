@@ -1,0 +1,17 @@
+# taskconfig.yaml: Main task configuration
+# ----------------------------------------
+# workspace:
+# TODO: rearrange the lay out
+workspace: "/home/lee/code/isaactasks/humanoid_amp"
+env_cfg_path: "/home/lee/code/isaactasks/humanoid_amp/source/humanoid_amp/humanoid_amp/tasks/direct/humanoid_amp/humanoid_amp_env.py"
+logs_path: "/home/lee/code/isaactasks/humanoid_amp/logs/rl_games/humanoid_amp_direct"
+description: "to make the humanoid do a moon walk with feet sliding off the ground alternatingly to move backward"
+
+
+# training settings:
+task: Template-Humanoid-Amp-Base-Direct-v0
+num_envs: None
+seed: None
+checkpoint: None
+max_iterations: None
+python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python

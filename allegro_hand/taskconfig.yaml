@@ -1,0 +1,17 @@
+# taskconfig.yaml: Main task configuration
+# ----------------------------------------
+# workspace:
+# TODO: rearrange the lay out
+workspace: "/home/lee/code/isaactasks/allegro_hand"
+env_cfg_path: "/home/lee/code/isaactasks/allegro_hand/source/allegro_hand/allegro_hand/tasks/direct/allegro_hand/allegro_hand_env.py"
+logs_path: "/home/lee/code/isaactasks/allegro_hand/logs/rl_games/allegro_hand_direct"
+description: "to make the hand spin the object to a target orientation"
+
+
+# training settings:
+task: Template-Allegro-Hand-Direct-v0
+num_envs: None
+seed: None
+checkpoint: None
+max_iterations: 5000
+python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python

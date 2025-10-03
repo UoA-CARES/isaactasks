@@ -1,0 +1,17 @@
+# taskconfig.yaml: Main task configuration
+# ----------------------------------------
+# workspace:
+# TODO: rearrange the lay out
+workspace: "/home/lee/code/isaactasks/anymal"
+env_cfg_path: "/home/lee/code/isaactasks/anymal/source/anymal/anymal/tasks/direct/anymal/anymal_env.py"
+logs_path: "/home/lee/code/isaactasks/anymal/logs/rl_games/anymal_direct"
+description: "to make the quadruped follow randomly chosen x,y, and yaw target velocities"
+
+
+# training settings:
+task: Template-Anymal-Direct-v0
+num_envs: None
+seed: None
+checkpoint: None
+max_iterations: 1000
+python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python

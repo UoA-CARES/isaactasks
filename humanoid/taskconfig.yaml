@@ -1,0 +1,17 @@
+# taskconfig.yaml: Main task configuration
+# ----------------------------------------
+# workspace:
+# TODO: rearrange the lay out
+workspace: "/home/lee/code/isaactasks/humanoid"
+env_cfg_path: "/home/lee/code/isaactasks/humanoid/source/humanoid/humanoid/tasks/direct/humanoid/humanoid_env.py"
+logs_path: "/home/lee/code/isaactasks/humanoid/logs/rl_games/humanoid_direct"
+description: "to make the humanoid run as fast as possible"
+
+
+# training settings:
+task: Template-Humanoid-Direct-v0
+num_envs: None
+seed: None
+checkpoint: None
+max_iterations: None
+python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
