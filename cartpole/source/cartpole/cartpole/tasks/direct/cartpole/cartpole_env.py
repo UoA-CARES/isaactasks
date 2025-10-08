@@ -71,6 +71,19 @@ class CartpoleEnv(DirectRLEnv):
         return observations
 
     def _get_rewards(self) -> torch.Tensor:
+        # Fitness Func,
+        if "log" not in self.extras:
+            self.extras["log"] = dict()
+        
+        # Log the episode duration as the fitness measure
+        # Calculate average episode length for environments that reset (similar to cartpole.py)
+        if self.reset_terminated.sum() > 0:
+            consecutive_successes = (self.episode_length_buf.float() * self.reset_terminated).sum() / self.reset_terminated.sum()
+        else:
+            consecutive_successes = torch.tensor(0.0, device=self.device)
+        
+        self.extras["log"]["consecutive_successes"] = consecutive_successes.item()
+
         total_reward = compute_rewards(
             self.cfg.rew_scale_alive,
             self.cfg.rew_scale_terminated,
