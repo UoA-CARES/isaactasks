@@ -108,54 +108,49 @@ class AnymalEnv(DirectRLEnv):
         return observations
 
     def _get_rewards(self) -> torch.Tensor:
-        # linear velocity tracking
-        lin_vel_error = torch.sum(torch.square(self._commands[:, :2] - self._robot.data.root_lin_vel_b[:, :2]), dim=1)
-        lin_vel_error_mapped = torch.exp(-lin_vel_error / 0.25)
-        # yaw rate tracking
-        yaw_rate_error = torch.square(self._commands[:, 2] - self._robot.data.root_ang_vel_b[:, 2])
-        yaw_rate_error_mapped = torch.exp(-yaw_rate_error / 0.25)
-        # z velocity tracking
-        z_vel_error = torch.square(self._robot.data.root_lin_vel_b[:, 2])
-        # angular velocity x/y
-        ang_vel_error = torch.sum(torch.square(self._robot.data.root_ang_vel_b[:, :2]), dim=1)
-        # joint torques
-        joint_torques = torch.sum(torch.square(self._robot.data.applied_torque), dim=1)
-        # joint acceleration
-        joint_accel = torch.sum(torch.square(self._robot.data.joint_acc), dim=1)
-        # action rate
-        action_rate = torch.sum(torch.square(self._actions - self._previous_actions), dim=1)
-        # feet air time
+        # Prepare data for compute_rewards
         first_contact = self._contact_sensor.compute_first_contact(self.step_dt)[:, self._feet_ids]
         last_air_time = self._contact_sensor.data.last_air_time[:, self._feet_ids]
-        air_time = torch.sum((last_air_time - 0.5) * first_contact, dim=1) * (
-            torch.norm(self._commands[:, :2], dim=1) > 0.1
-        )
-        # undesired contacts
         net_contact_forces = self._contact_sensor.data.net_forces_w_history
         is_contact = (
             torch.max(torch.norm(net_contact_forces[:, :, self._undesired_contact_body_ids], dim=-1), dim=1)[0] > 1.0
         )
-        contacts = torch.sum(is_contact, dim=1)
-        # flat orientation
-        flat_orientation = torch.sum(torch.square(self._robot.data.projected_gravity_b[:, :2]), dim=1)
+        # Fitness func:
+        if "log" not in self.extras:
+            self.extras["log"] = dict()
+        
+        # Calculate consecutive successes (same as in anymal.py)
+        lin_vel_error = torch.sum(torch.square(self._commands[:, :2] - self._robot.data.root_lin_vel_b[:, :2]), dim=1)
+        ang_vel_error = torch.square(self._commands[:, 2] - self._robot.data.root_ang_vel_b[:, 2])
+        self.extras["log"]["consecutive_successes"] = -(lin_vel_error + ang_vel_error).mean()
 
-        rewards = {
-            "track_lin_vel_xy_exp": lin_vel_error_mapped * self.cfg.lin_vel_reward_scale * self.step_dt,
-            "track_ang_vel_z_exp": yaw_rate_error_mapped * self.cfg.yaw_rate_reward_scale * self.step_dt,
-            "lin_vel_z_l2": z_vel_error * self.cfg.z_vel_reward_scale * self.step_dt,
-            "ang_vel_xy_l2": ang_vel_error * self.cfg.ang_vel_reward_scale * self.step_dt,
-            "dof_torques_l2": joint_torques * self.cfg.joint_torque_reward_scale * self.step_dt,
-            "dof_acc_l2": joint_accel * self.cfg.joint_accel_reward_scale * self.step_dt,
-            "action_rate_l2": action_rate * self.cfg.action_rate_reward_scale * self.step_dt,
-            "feet_air_time": air_time * self.cfg.feet_air_time_reward_scale * self.step_dt,
-            "undesired_contacts": contacts * self.cfg.undesired_contact_reward_scale * self.step_dt,
-            "flat_orientation_l2": flat_orientation * self.cfg.flat_orientation_reward_scale * self.step_dt,
-        }
-        reward = torch.sum(torch.stack(list(rewards.values())), dim=0)
-        # Logging
-        for key, value in rewards.items():
-            self._episode_sums[key] += value
-        return reward
+        total_reward = compute_rewards(
+            self._commands,
+            self._robot.data.root_lin_vel_b,
+            self._robot.data.root_ang_vel_b,
+            self._robot.data.projected_gravity_b,
+            self._robot.data.applied_torque,
+            self._robot.data.joint_acc,
+            self._actions,
+            self._previous_actions,
+            first_contact,
+            last_air_time,
+            is_contact,
+            self.cfg.lin_vel_reward_scale,
+            self.cfg.yaw_rate_reward_scale,
+            self.cfg.z_vel_reward_scale,
+            self.cfg.ang_vel_reward_scale,
+            self.cfg.joint_torque_reward_scale,
+            self.cfg.joint_accel_reward_scale,
+            self.cfg.action_rate_reward_scale,
+            self.cfg.feet_air_time_reward_scale,
+            self.cfg.undesired_contact_reward_scale,
+            self.cfg.flat_orientation_reward_scale,
+            self.step_dt,
+            self._episode_sums,
+        )
+        
+        return total_reward
 
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
         time_out = self.episode_length_buf >= self.max_episode_length - 1
@@ -195,3 +190,95 @@ class AnymalEnv(DirectRLEnv):
         extras["Episode_Termination/base_contact"] = torch.count_nonzero(self.reset_terminated[env_ids]).item()
         extras["Episode_Termination/time_out"] = torch.count_nonzero(self.reset_time_outs[env_ids]).item()
         self.extras["log"].update(extras)
+
+
+@torch.jit.script
+def compute_rewards(
+    commands: torch.Tensor,
+    root_lin_vel_b: torch.Tensor,
+    root_ang_vel_b: torch.Tensor,
+    projected_gravity_b: torch.Tensor,
+    applied_torque: torch.Tensor,
+    joint_acc: torch.Tensor,
+    actions: torch.Tensor,
+    previous_actions: torch.Tensor,
+    first_contact: torch.Tensor,
+    last_air_time: torch.Tensor,
+    is_contact: torch.Tensor,
+    lin_vel_reward_scale: float,
+    yaw_rate_reward_scale: float,
+    z_vel_reward_scale: float,
+    ang_vel_reward_scale: float,
+    joint_torque_reward_scale: float,
+    joint_accel_reward_scale: float,
+    action_rate_reward_scale: float,
+    feet_air_time_reward_scale: float,
+    undesired_contact_reward_scale: float,
+    flat_orientation_reward_scale: float,
+    step_dt: float,
+    episode_sums: dict[str, torch.Tensor],
+) -> torch.Tensor:
+    # linear velocity tracking
+    lin_vel_error = torch.sum(torch.square(commands[:, :2] - root_lin_vel_b[:, :2]), dim=1)
+    lin_vel_error_mapped = torch.exp(-lin_vel_error / 0.25)
+    # yaw rate tracking
+    yaw_rate_error = torch.square(commands[:, 2] - root_ang_vel_b[:, 2])
+    yaw_rate_error_mapped = torch.exp(-yaw_rate_error / 0.25)
+    # z velocity tracking
+    z_vel_error = torch.square(root_lin_vel_b[:, 2])
+    # angular velocity x/y
+    ang_vel_error = torch.sum(torch.square(root_ang_vel_b[:, :2]), dim=1)
+    # joint torques
+    joint_torques = torch.sum(torch.square(applied_torque), dim=1)
+    # joint acceleration
+    joint_accel = torch.sum(torch.square(joint_acc), dim=1)
+    # action rate
+    action_rate = torch.sum(torch.square(actions - previous_actions), dim=1)
+    # feet air time
+    air_time = torch.sum((last_air_time - 0.5) * first_contact, dim=1) * (
+        torch.norm(commands[:, :2], dim=1) > 0.1
+    )
+    # undesired contacts
+    contacts = torch.sum(is_contact, dim=1)
+    # flat orientation
+    flat_orientation = torch.sum(torch.square(projected_gravity_b[:, :2]), dim=1)
+
+    # Calculate individual reward components
+    track_lin_vel_xy_exp = lin_vel_error_mapped * lin_vel_reward_scale * step_dt
+    track_ang_vel_z_exp = yaw_rate_error_mapped * yaw_rate_reward_scale * step_dt
+    lin_vel_z_l2 = z_vel_error * z_vel_reward_scale * step_dt
+    ang_vel_xy_l2 = ang_vel_error * ang_vel_reward_scale * step_dt
+    dof_torques_l2 = joint_torques * joint_torque_reward_scale * step_dt
+    dof_acc_l2 = joint_accel * joint_accel_reward_scale * step_dt
+    action_rate_l2 = action_rate * action_rate_reward_scale * step_dt
+    feet_air_time_reward = air_time * feet_air_time_reward_scale * step_dt
+    undesired_contacts_reward = contacts * undesired_contact_reward_scale * step_dt
+    flat_orientation_l2 = flat_orientation * flat_orientation_reward_scale * step_dt
+
+    # Update episode sums for logging
+    episode_sums["track_lin_vel_xy_exp"] += track_lin_vel_xy_exp
+    episode_sums["track_ang_vel_z_exp"] += track_ang_vel_z_exp
+    episode_sums["lin_vel_z_l2"] += lin_vel_z_l2
+    episode_sums["ang_vel_xy_l2"] += ang_vel_xy_l2
+    episode_sums["dof_torques_l2"] += dof_torques_l2
+    episode_sums["dof_acc_l2"] += dof_acc_l2
+    episode_sums["action_rate_l2"] += action_rate_l2
+    episode_sums["feet_air_time"] += feet_air_time_reward
+    episode_sums["undesired_contacts"] += undesired_contacts_reward
+    episode_sums["flat_orientation_l2"] += flat_orientation_l2
+
+    # Total reward
+    total_reward = (
+        track_lin_vel_xy_exp
+        + track_ang_vel_z_exp
+        + lin_vel_z_l2
+        + ang_vel_xy_l2
+        + dof_torques_l2
+        + dof_acc_l2
+        + action_rate_l2
+        + feet_air_time_reward
+        + undesired_contacts_reward
+        + flat_orientation_l2
+    )
+
+    return total_reward

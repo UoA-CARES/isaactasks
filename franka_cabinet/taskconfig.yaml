@@ -6,6 +6,7 @@ workspace: "/home/lee/code/isaactasks/franka_cabinet"
 env_cfg_path: "/home/lee/code/isaactasks/franka_cabinet/source/franka_cabinet/franka_cabinet/tasks/direct/franka_cabinet/franka_cabinet_env.py"
 logs_path: "/home/lee/code/isaactasks/franka_cabinet/logs/rl_games/franka_cabinet_direct"
 description: "to open the cabinet door"
+evaluation: "Episode/open_reward"
 
 
 # training settings:

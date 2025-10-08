@@ -189,6 +189,14 @@ class LocomotionEnv(DirectRLEnv):
         return observations
 
     def _get_rewards(self) -> torch.Tensor:
+        # Fitness Func, progress_reward
+        if "log" not in self.extras:
+            self.extras["log"] = dict()
+            
+        # Calculate the fitness function: distance traveled in current step
+        # This measures how fast the humanoid is running towards the target
+        self.extras["log"]["consecutive_successes"] = self.potentials - self.prev_potentials
+        
         total_reward = compute_rewards(
             self.actions,
             self.reset_terminated,

@@ -123,6 +123,10 @@ class FrankaCabinetEnv(DirectRLEnv):
         self.drawer_grasp_rot = torch.zeros((self.num_envs, 4), device=self.device)
         self.drawer_grasp_pos = torch.zeros((self.num_envs, 3), device=self.device)
 
+        # Track successes for consecutive success calculation
+        self.successes = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
+        self.consecutive_successes = torch.zeros(1, dtype=torch.float, device=self.device)
+
     def _setup_scene(self):
         self._robot = Articulation(self.cfg.robot)
         self._cabinet = Articulation(self.cfg.cabinet)
@@ -158,6 +162,10 @@ class FrankaCabinetEnv(DirectRLEnv):
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
         terminated = self._cabinet.data.joint_pos[:, 3] > 0.39
         truncated = self.episode_length_buf >= self.max_episode_length - 1
+        
+        # Update successes tracker
+        self.successes = torch.where(terminated, torch.ones_like(self.successes), self.successes)
+        
         return terminated, truncated
 
     def _get_rewards(self) -> torch.Tensor:
@@ -165,6 +173,18 @@ class FrankaCabinetEnv(DirectRLEnv):
         self._compute_intermediate_values()
         robot_left_finger_pos = self._robot.data.body_pos_w[:, self.left_finger_link_idx]
         robot_right_finger_pos = self._robot.data.body_pos_w[:, self.right_finger_link_idx]
+
+        # Update consecutive successes: when episodes reset, accumulate successes
+        reset_buf = (self._cabinet.data.joint_pos[:, 3] > 0.39) | (self.episode_length_buf >= self.max_episode_length - 1)
+        self.consecutive_successes = torch.where(
+            reset_buf.any(), 
+            (self.successes * reset_buf.float()).mean(), 
+            self.consecutive_successes
+        )
+        
+        if "log" not in self.extras:
+            self.extras["log"] = dict()
+        self.extras["log"]["consecutive_successes"] = self.consecutive_successes.item()
 
         return self._compute_rewards(
             self.actions,
@@ -190,6 +210,10 @@ class FrankaCabinetEnv(DirectRLEnv):
 
     def _reset_idx(self, env_ids: torch.Tensor | None):
         super()._reset_idx(env_ids)
+        
+        # Reset successes for these environments
+        self.successes[env_ids] = 0
+        
         # robot state
         joint_pos = self._robot.data.default_joint_pos[env_ids] + sample_uniform(
             -0.125,

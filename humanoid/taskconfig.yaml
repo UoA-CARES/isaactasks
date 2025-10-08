@@ -6,6 +6,7 @@ workspace: "/home/lee/code/isaactasks/humanoid"
 env_cfg_path: "/home/lee/code/isaactasks/humanoid/source/humanoid/humanoid/tasks/direct/humanoid/humanoid_env.py"
 logs_path: "/home/lee/code/isaactasks/humanoid/logs/rl_games/humanoid_direct"
 description: "to make the humanoid run as fast as possible"
+evalaution: ""
 
 
 # training settings:

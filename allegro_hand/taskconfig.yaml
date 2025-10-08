@@ -6,6 +6,7 @@ workspace: "/home/lee/code/isaactasks/allegro_hand"
 env_cfg_path: "/home/lee/code/isaactasks/allegro_hand/source/allegro_hand/allegro_hand/tasks/direct/allegro_hand/allegro_hand_env.py"
 logs_path: "/home/lee/code/isaactasks/allegro_hand/logs/rl_games/allegro_hand_direct"
 description: "to make the hand spin the object to a target orientation"
+evaluation: "Episode/consecutive_successes"
 
 
 # training settings:
