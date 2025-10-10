@@ -98,23 +98,46 @@ class QuadcopterEnv(DirectRLEnv):
         return observations
 
     def _get_rewards(self) -> torch.Tensor:
-        total_reward = compute_rewards(
-            self._robot.data.root_lin_vel_b,
-            self._robot.data.root_ang_vel_b,
-            self._robot.data.root_pos_w,
-            self._desired_pos_w,
-            self.cfg.lin_vel_reward_scale,
-            self.cfg.ang_vel_reward_scale,
-            self.cfg.distance_to_goal_reward_scale,
-            self.step_dt,
-        )
-        # Logging
         distance_to_goal = torch.linalg.norm(self._desired_pos_w - self._robot.data.root_pos_w, dim=1)
-        consecutive_successes = -distance_to_goal.mean()
+
+        # Fitness func:
         if "log" not in self.extras:
             self.extras["log"] = dict()
-        self.extras["consecutive_successes"] = consecutive_successes
-        return total_reward
+        self.extras["log"]["consecutive_successes"] = - distance_to_goal.mean()
+
+        return self.compute_reward(
+            self._robot.data.root_lin_vel_b,
+            self._robot.data.root_ang_vel_b,
+            self.cfg.lin_vel_reward_scale,
+            self.cfg.ang_vel_reward_scale,
+            self.step_dt,
+            distance_to_goal,
+            self.cfg.distance_to_goal_reward_scale,
+        )
+
+    @torch.jit.script
+    def compute_reward(
+        root_lin_vel_b: torch.Tensor, 
+        root_ang_vel_b: torch.Tensor, 
+        lin_vel_reward_scale: float, 
+        ang_vel_reward_scale: float, 
+        step_dt: float, 
+        distance_to_goal: torch.Tensor, 
+        distance_to_goal_reward_scale: float) -> torch.Tensor:
+        
+        lin_vel = torch.sum(torch.square(root_lin_vel_b), dim=1)
+        ang_vel = torch.sum(torch.square(root_ang_vel_b), dim=1)
+        distance_to_goal_mapped = 1 - torch.tanh(distance_to_goal / 0.8)
+        rewards = {
+            "lin_vel": lin_vel * lin_vel_reward_scale * step_dt,
+            "ang_vel": ang_vel * ang_vel_reward_scale * step_dt,
+            "distance_to_goal": distance_to_goal_mapped * distance_to_goal_reward_scale * step_dt,
+        }
+        reward = torch.sum(torch.stack(list(rewards.values())), dim=0)
+        # Logging
+        # for key, value in rewards.items():
+        #     self._episode_sums[key] += value
+        return reward
 
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
         time_out = self.episode_length_buf >= self.max_episode_length - 1
@@ -134,7 +157,10 @@ class QuadcopterEnv(DirectRLEnv):
             episodic_sum_avg = torch.mean(self._episode_sums[key][env_ids])
             extras["Episode_Reward/" + key] = episodic_sum_avg / self.max_episode_length_s
             self._episode_sums[key][env_ids] = 0.0
-        self.extras["log"] = dict()
+        
+        if "log" not in self.extras:
+            self.extras["log"] = dict()
+        # self.extras["log"] = dict()
         self.extras["log"].update(extras)
         extras = dict()
         extras["Episode_Termination/died"] = torch.count_nonzero(self.reset_terminated[env_ids]).item()
@@ -180,33 +206,3 @@ class QuadcopterEnv(DirectRLEnv):
     def _debug_vis_callback(self, event):
         # update the markers
         self.goal_pos_visualizer.visualize(self._desired_pos_w)
-
-
-@torch.jit.script
-def compute_rewards(
-    root_lin_vel_b: torch.Tensor,
-    root_ang_vel_b: torch.Tensor,
-    root_pos_w: torch.Tensor,
-    desired_pos_w: torch.Tensor,
-    lin_vel_reward_scale: float,
-    ang_vel_reward_scale: float,
-    distance_to_goal_reward_scale: float,
-    step_dt: float,
-):
-    # Linear velocity penalty
-    lin_vel = torch.sum(torch.square(root_lin_vel_b), dim=1)
-    lin_vel_penalty = lin_vel * lin_vel_reward_scale * step_dt
-
-    # Angular velocity penalty
-    ang_vel = torch.sum(torch.square(root_ang_vel_b), dim=1)
-    ang_vel_penalty = ang_vel * ang_vel_reward_scale * step_dt
-
-    # Distance to goal reward
-    distance_to_goal = torch.linalg.norm(desired_pos_w - root_pos_w, dim=1)
-    distance_to_goal_mapped = 1 - torch.tanh(distance_to_goal / 0.8)
-    distance_reward = distance_to_goal_mapped * distance_to_goal_reward_scale * step_dt
-
-    # Total reward
-    total_reward = lin_vel_penalty + ang_vel_penalty + distance_reward
-
-    return total_reward, lin_vel_penalty, ang_vel_penalty, distance_reward

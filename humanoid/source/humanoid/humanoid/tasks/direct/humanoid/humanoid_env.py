@@ -80,6 +80,8 @@ class LocomotionEnv(DirectRLEnv):
             
         # Calculate the fitness function: distance traveled in current step
         # This measures how fast the humanoid is running towards the target
+        print(self.potentials)
+        print(self.prev_potentials)
         self.extras["log"]["consecutive_successes"] = self.potentials - self.prev_potentials
         
         (

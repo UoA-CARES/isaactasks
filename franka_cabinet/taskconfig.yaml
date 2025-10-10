@@ -16,3 +16,5 @@ seed: None
 checkpoint: None
 max_iterations: 1500
 python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
+
+# python scripts/rl_games/train.py --task Template-Franka-Cabinet-Direct-v0 --headless

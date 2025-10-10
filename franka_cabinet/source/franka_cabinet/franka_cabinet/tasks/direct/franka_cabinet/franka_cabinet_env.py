@@ -162,10 +162,7 @@ class FrankaCabinetEnv(DirectRLEnv):
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
         terminated = self._cabinet.data.joint_pos[:, 3] > 0.39
         truncated = self.episode_length_buf >= self.max_episode_length - 1
-        
-        # Update successes tracker
-        self.successes = torch.where(terminated, torch.ones_like(self.successes), self.successes)
-        
+    
         return terminated, truncated
 
     def _get_rewards(self) -> torch.Tensor:
@@ -175,18 +172,21 @@ class FrankaCabinetEnv(DirectRLEnv):
         robot_right_finger_pos = self._robot.data.body_pos_w[:, self.right_finger_link_idx]
 
         # Update consecutive successes: when episodes reset, accumulate successes
-        reset_buf = (self._cabinet.data.joint_pos[:, 3] > 0.39) | (self.episode_length_buf >= self.max_episode_length - 1)
-        self.consecutive_successes = torch.where(
-            reset_buf.any(), 
-            (self.successes * reset_buf.float()).mean(), 
-            self.consecutive_successes
-        )
-        
+        # successes: For every environment where the drawer is open, set successes to 1, otherwise keep it the same
+        self.successes = torch.where(self._cabinet.data.joint_pos[:, 3] > 0.39, torch.ones_like(self.successes), self.successes)
+        # reset_buf: For every environment where the drawer is open or max episode length reached, set reset_buf to 1, otherwise keep it the same
+        # reset_buf is 1 where the episode should reset.
+        self.reset_buf = torch.where(self._cabinet.data.joint_pos[:, 3] > 0.39, torch.ones_like(self.reset_buf), self.reset_buf)
+        self.reset_buf = torch.where(self.episode_length_buf >= self.max_episode_length - 1, torch.ones_like(self.reset_buf), self. reset_buf)
+        # Consecutive successes: if reset_buf is 1, add the current successes to consecutive_successes, otherwise keep it the same
+        self.consecutive_successes = torch.where(self.reset_buf > 0, self.successes * self.reset_buf, self.consecutive_successes).mean()
+
         if "log" not in self.extras:
             self.extras["log"] = dict()
-        self.extras["log"]["consecutive_successes"] = self.consecutive_successes.item()
 
-        return self._compute_rewards(
+        self.extras["log"]["consecutive_successes"] = self.consecutive_successes
+
+        return self.compute_rewards(
             self.actions,
             self._cabinet.data.joint_pos,
             self.robot_grasp_pos,
@@ -213,6 +213,7 @@ class FrankaCabinetEnv(DirectRLEnv):
         
         # Reset successes for these environments
         self.successes[env_ids] = 0
+        self.reset_buf[env_ids] = 0
         
         # robot state
         joint_pos = self._robot.data.default_joint_pos[env_ids] + sample_uniform(
@@ -280,28 +281,29 @@ class FrankaCabinetEnv(DirectRLEnv):
             self.drawer_local_grasp_pos[env_ids],
         )
 
-    def _compute_rewards(
-        self,
-        actions,
-        cabinet_dof_pos,
-        franka_grasp_pos,
-        drawer_grasp_pos,
-        franka_grasp_rot,
-        drawer_grasp_rot,
-        franka_lfinger_pos,
-        franka_rfinger_pos,
-        gripper_forward_axis,
-        drawer_inward_axis,
-        gripper_up_axis,
-        drawer_up_axis,
-        num_envs,
-        dist_reward_scale,
-        rot_reward_scale,
-        open_reward_scale,
-        action_penalty_scale,
-        finger_reward_scale,
-        joint_positions,
-    ):
+    @torch.jit.script
+    def compute_rewards(
+        # self,
+        actions: torch.Tensor,
+        cabinet_dof_pos: torch.Tensor,
+        franka_grasp_pos: torch.Tensor,
+        drawer_grasp_pos: torch.Tensor,
+        franka_grasp_rot: torch.Tensor,
+        drawer_grasp_rot: torch.Tensor,
+        franka_lfinger_pos: torch.Tensor,
+        franka_rfinger_pos: torch.Tensor,
+        gripper_forward_axis: torch.Tensor,
+        drawer_inward_axis: torch.Tensor,
+        gripper_up_axis: torch.Tensor,
+        drawer_up_axis: torch.Tensor,
+        num_envs: int,
+        dist_reward_scale: float,
+        rot_reward_scale: float,
+        open_reward_scale: float,
+        action_penalty_scale: float,
+        finger_reward_scale: float,
+        joint_positions: torch.Tensor,
+    ) -> torch.Tensor:
         # distance from hand to the drawer
         d = torch.norm(franka_grasp_pos - drawer_grasp_pos, p=2, dim=-1)
         dist_reward = 1.0 / (1.0 + d**2)
@@ -342,16 +344,22 @@ class FrankaCabinetEnv(DirectRLEnv):
             + finger_reward_scale * finger_dist_penalty
             - action_penalty_scale * action_penalty
         )
+        # if "log" not in self.extras:
+        #     self.extras["log"] = dict()
 
-        self.extras["log"] = {
-            "dist_reward": (dist_reward_scale * dist_reward).mean(),
-            "rot_reward": (rot_reward_scale * rot_reward).mean(),
-            "open_reward": (open_reward_scale * open_reward).mean(),
-            "action_penalty": (-action_penalty_scale * action_penalty).mean(),
-            "left_finger_distance_reward": (finger_reward_scale * lfinger_dist).mean(),
-            "right_finger_distance_reward": (finger_reward_scale * rfinger_dist).mean(),
-            "finger_dist_penalty": (finger_reward_scale * finger_dist_penalty).mean(),
-        }
+        # Append all these keys and values to self.extras["log"] (do not overwrite)
+        # log_dict = {
+        #     "dist_reward": (dist_reward_scale * dist_reward).mean(),
+        #     "rot_reward": (rot_reward_scale * rot_reward).mean(),
+        #     "open_reward": (open_reward_scale * open_reward).mean(),
+        #     "action_penalty": (-action_penalty_scale * action_penalty).mean(),
+        #     "left_finger_distance_reward": (finger_reward_scale * lfinger_dist).mean(),
+        #     "right_finger_distance_reward": (finger_reward_scale * rfinger_dist).mean(),
+        #     "finger_dist_penalty": (finger_reward_scale * finger_dist_penalty).mean(),
+        # }
+        # if "log" not in self.extras:
+        #     self.extras["log"] = dict()
+        # self.extras["log"].update(log_dict)
 
         # bonus for opening drawer properly
         rewards = torch.where(cabinet_dof_pos[:, 3] > 0.01, rewards + 0.25, rewards)

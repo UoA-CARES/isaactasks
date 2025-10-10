@@ -16,3 +16,7 @@ seed: None
 checkpoint: None
 max_iterations: None
 python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
+
+# python scripts/rl_games/train.py --task Template-Quadcopter-Direct-v0 --headless
+# python scripts/rl_games/play.py --task Template-Quadcopter-Direct-v0 --num_envs 4
+# tensorboard --logdir /home/lee/code/isaactasks/quadcopter/
