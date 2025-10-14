@@ -77,6 +77,7 @@ class CartpoleEnv(DirectRLEnv):
         
         # Log the episode duration as the fitness measure
         # Calculate average episode length for environments that reset (similar to cartpole.py)
+        print(self.reset_terminated.sum())
         if self.reset_terminated.sum() > 0:
             consecutive_successes = (self.episode_length_buf.float() * self.reset_terminated).sum() / self.reset_terminated.sum()
         else:

@@ -74,15 +74,6 @@ class LocomotionEnv(DirectRLEnv):
         self.torso_position, self.torso_rotation = self.robot.data.root_pos_w, self.robot.data.root_quat_w
         self.velocity, self.ang_velocity = self.robot.data.root_lin_vel_w, self.robot.data.root_ang_vel_w
         self.dof_pos, self.dof_vel = self.robot.data.joint_pos, self.robot.data.joint_vel
-        # Fitness Func, progress_reward
-        if "log" not in self.extras:
-            self.extras["log"] = dict()
-            
-        # Calculate the fitness function: distance traveled in current step
-        # This measures how fast the humanoid is running towards the target
-        print(self.potentials)
-        print(self.prev_potentials)
-        self.extras["log"]["consecutive_successes"] = self.potentials - self.prev_potentials
         
         (
             self.up_proj,
@@ -136,6 +127,14 @@ class LocomotionEnv(DirectRLEnv):
         return observations
 
     def _get_rewards(self) -> torch.Tensor:
+        # Fitness Func, progress_reward
+        if "log" not in self.extras:
+            self.extras["log"] = dict()
+            
+        # Calculate the fitness function: distance traveled in current step
+        # This measures how fast the humanoid is running towards the target
+
+        self.extras["log"]["consecutive_successes"] = (self.potentials - self.prev_potentials).mean()
         total_reward = compute_rewards(
             self.actions,
             self.reset_terminated,

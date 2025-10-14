@@ -18,3 +18,5 @@ max_iterations: None
 python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
 
 
+# python scripts/rl_games/train.py --task Template-Humanoid-Direct-v0 --headless
+# tensorboard --logdir /home/lee/code/isaactasks/humanoid/
