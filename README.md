@@ -15,9 +15,3 @@ git switch workspace
 git fetch origin
 git reset --hard origin/main
 ```
-
-
-```python
-# recreate from main branch
-
-```
