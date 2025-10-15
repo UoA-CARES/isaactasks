@@ -4,9 +4,8 @@
 # TODO: rearrange the lay out
 workspace: "/home/lee/code/isaactasks/ant"
 env_cfg_path: "/home/lee/code/isaactasks/ant/source/ant/ant/tasks/direct/ant/ant_env.py"
-logs_path: "/home/lee/code/isaactasks/ant/logs/rl_games/ant_direct"
+logs_path: "/home/lee/code/isaactasks/ant/logs/rl_games/ant"
 description: "to make the ant run forward as fast as possible"
-evalaution: 
 
 
 # training settings:

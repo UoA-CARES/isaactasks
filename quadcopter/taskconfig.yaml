@@ -4,9 +4,8 @@
 # TODO: rearrange the lay out
 workspace: "/home/lee/code/isaactasks/quadcopter"
 env_cfg_path: "/home/lee/code/isaactasks/quadcopter/source/quadcopter/quadcopter/tasks/direct/quadcopter/quadcopter_env.py"
-logs_path: "/home/lee/code/isaactasks/quadcopter/logs/rl_games/quadcopter_direct"
+logs_path: "/home/lee/code/isaactasks/quadcopter/logs/rl_games/quadcopter"
 description: "to make the quadcopter reach and hover near a fixed position"
-evalaution: "Episode/Episode_Reward/distance_to_goal"
 
 
 # training settings:

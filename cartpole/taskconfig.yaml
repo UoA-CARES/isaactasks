@@ -4,10 +4,8 @@
 # TODO: rearrange the lay out
 workspace: "/home/lee/code/isaactasks/cartpole"
 env_cfg_path: "/home/lee/code/isaactasks/cartpole/source/cartpole/cartpole/tasks/direct/cartpole/cartpole_env.py"
-logs_path: "/home/lee/code/isaactasks/cartpole/logs/rl_games/cartpole_direct"
+logs_path: "/home/lee/code/isaactasks/cartpole/logs/rl_games/cartpole"
 description: "to balance a pole on a cart so that the pole stays upright"
-evalaution: 
-
 
 # training settings:
 task: Template-Cartpole-Direct-v0
