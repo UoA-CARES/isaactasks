@@ -3,8 +3,8 @@
 # workspace:
 # TODO: rearrange the lay out
 workspace: "/home/lee/code/isaactasks/shadow_hand"
-env_cfg_path: "/home/lee/code/isaactasks/shadow_hand/source/shadow_hand/shadow_hand/tasks/direct/shadow_hand/shadow_hand_env.py"
-logs_path: "/home/lee/code/isaactasks/shadow_hand/logs/rl_games/shadow_hand"
+env_cfg_path: "source/shadow_hand/shadow_hand/tasks/direct/shadow_hand/shadow_hand_env.py"
+logs_path: "logs/rl_games/shadow_hand"
 description: "to make the shadow hand spin the object to a target orientation"
 
 # training settings:

@@ -3,8 +3,8 @@
 # workspace:
 # TODO: rearrange the lay out
 workspace: "/home/lee/code/isaactasks/anymal"
-env_cfg_path: "/home/lee/code/isaactasks/anymal/source/anymal/anymal/tasks/direct/anymal/anymal_env.py"
-logs_path: "/home/lee/code/isaactasks/anymal/logs/rl_games/anymal"
+env_cfg_path: "source/anymal/anymal/tasks/direct/anymal/anymal_env.py"
+logs_path: "logs/rl_games/anymal_c_rough_direct"
 description: "to make the quadruped follow randomly chosen x,y, and yaw target velocities"
 
 
