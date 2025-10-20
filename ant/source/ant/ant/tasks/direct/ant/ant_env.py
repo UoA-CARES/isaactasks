@@ -197,7 +197,7 @@ class LocomotionEnv(DirectRLEnv):
         # This measures how fast the humanoid is running towards the target
         self.extras["log"]["consecutive_successes"] = (self.potentials - self.prev_potentials).mean()
         
-        total_reward = compute_rewards(
+        total_reward, reward_components = compute_rewards(
             self.actions,
             self.reset_terminated,
             self.cfg.up_weight,
@@ -215,6 +215,10 @@ class LocomotionEnv(DirectRLEnv):
             self.cfg.alive_reward_scale,
             self.motor_effort_ratio,
         )
+
+        for k, v in reward_components.items():
+            self.extras["log"][k] = v.mean()
+            
         return total_reward
 
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
@@ -285,6 +289,16 @@ def compute_rewards(
     alive_reward = torch.ones_like(potentials) * alive_reward_scale
     progress_reward = potentials - prev_potentials
 
+    reward_components = {
+        "progress_reward": progress_reward,
+        "alive_reward": alive_reward,
+        "up_reward": up_reward,
+        "heading_reward": heading_reward,
+        "actions_cost": -actions_cost_scale * actions_cost,
+        "electricity_cost": -energy_cost_scale * electricity_cost,
+        "dof_at_limit_cost": -dof_at_limit_cost,
+    }
+
     total_reward = (
         progress_reward
         + alive_reward
@@ -296,7 +310,7 @@ def compute_rewards(
     )
     # adjust reward for fallen agents
     total_reward = torch.where(reset_terminated, torch.ones_like(total_reward) * death_cost, total_reward)
-    return total_reward
+    return total_reward, reward_components
 
 
 @torch.jit.script
