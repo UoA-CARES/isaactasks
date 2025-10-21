@@ -217,7 +217,7 @@ class LocomotionEnv(DirectRLEnv):
         )
 
         for k, v in reward_components.items():
-            self.extras["log"][k] = v.mean()
+            self.extras["log"][k] = v
             
         return total_reward
 
