@@ -164,7 +164,7 @@ class AllegroHandEnv(DirectRLEnv):
             self.cfg.av_factor,
         )
         (
-            total_reward
+            total_reward, reward_components
         ) = compute_rewards(
             self.reset_buf,
             self.reset_goal_buf,
@@ -190,6 +190,9 @@ class AllegroHandEnv(DirectRLEnv):
         if "log" not in self.extras:
             self.extras["log"] = dict()
         self.extras["log"]["consecutive_successes"] = self.consecutive_successes.mean()
+        
+        for k, v in reward_components.items():
+            self.extras["log"][k] = v
 
         # reset goals if the goal has been reached
         goal_env_ids = self.reset_goal_buf.nonzero(as_tuple=False).squeeze(-1)
@@ -419,40 +422,8 @@ def compute_rewards(
     av_factor: float,
 ):
 
-    goal_dist = torch.norm(object_pos - target_pos, p=2, dim=-1)
-    rot_dist = rotation_distance(object_rot, target_rot)
+    return total_reward, reward_components
 
-    dist_rew = goal_dist * dist_reward_scale
-    rot_rew = 1.0 / (torch.abs(rot_dist) + rot_eps) * rot_reward_scale
-
-    action_penalty = torch.sum(actions**2, dim=-1)
-
-    # Total reward is: position distance + orientation alignment + action regularization + success bonus + fall penalty
-    reward = dist_rew + rot_rew + action_penalty * action_penalty_scale
-
-    # Find out which envs hit the goal and update successes count
-    goal_resets = torch.where(torch.abs(rot_dist) <= success_tolerance, torch.ones_like(reset_goal_buf), reset_goal_buf)
-    successes = successes + goal_resets
-
-    # Success bonus: orientation is within `success_tolerance` of goal orientation
-    reward = torch.where(goal_resets == 1, reward + reach_goal_bonus, reward)
-
-    # Fall penalty: distance to the goal is larger than a threshold
-    reward = torch.where(goal_dist >= fall_dist, reward + fall_penalty, reward)
-
-    # # Check env termination conditions, including maximum success number
-    # resets = torch.where(goal_dist >= fall_dist, torch.ones_like(reset_buf), reset_buf)
-
-    # num_resets = torch.sum(resets)
-    # finished_cons_successes = torch.sum(successes * resets.float())
-
-    # cons_successes = torch.where(
-    #     num_resets > 0,
-    #     av_factor * finished_cons_successes / num_resets + (1.0 - av_factor) * consecutive_successes,
-    #     consecutive_successes,
-    # )
-
-    return reward  # , goal_resets, successes, cons_successes
 
 
 

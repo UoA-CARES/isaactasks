@@ -105,7 +105,7 @@ class QuadcopterEnv(DirectRLEnv):
             self.extras["log"] = dict()
         self.extras["log"]["consecutive_successes"] = - distance_to_goal.mean()
 
-        return self.compute_reward(
+        total_reward, reward_components =  self.compute_rewards(
             self._robot.data.root_lin_vel_b,
             self._robot.data.root_ang_vel_b,
             self.cfg.lin_vel_reward_scale,
@@ -114,9 +114,13 @@ class QuadcopterEnv(DirectRLEnv):
             distance_to_goal,
             self.cfg.distance_to_goal_reward_scale,
         )
+        for k, v in reward_components.items():
+            self.extras["log"][k] = v
+            
+        return total_reward
 
     @torch.jit.script
-    def compute_reward(
+    def compute_rewards(
         root_lin_vel_b: torch.Tensor, 
         root_ang_vel_b: torch.Tensor, 
         lin_vel_reward_scale: float, 
@@ -124,20 +128,8 @@ class QuadcopterEnv(DirectRLEnv):
         step_dt: float, 
         distance_to_goal: torch.Tensor, 
         distance_to_goal_reward_scale: float) -> torch.Tensor:
-        
-        lin_vel = torch.sum(torch.square(root_lin_vel_b), dim=1)
-        ang_vel = torch.sum(torch.square(root_ang_vel_b), dim=1)
-        distance_to_goal_mapped = 1 - torch.tanh(distance_to_goal / 0.8)
-        rewards = {
-            "lin_vel": lin_vel * lin_vel_reward_scale * step_dt,
-            "ang_vel": ang_vel * ang_vel_reward_scale * step_dt,
-            "distance_to_goal": distance_to_goal_mapped * distance_to_goal_reward_scale * step_dt,
-        }
-        reward = torch.sum(torch.stack(list(rewards.values())), dim=0)
-        # Logging
-        # for key, value in rewards.items():
-        #     self._episode_sums[key] += value
-        return reward
+
+        return total_reward, reward_components
 
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
         time_out = self.episode_length_buf >= self.max_episode_length - 1
