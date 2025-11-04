@@ -35,7 +35,7 @@ params:
           val: 0
         fixed_sigma: True
     mlp:
-      units: [1024, 512, 256, 128]    #TODO 
+      units: [1024, 1024, 512, 256]    #TODO 
       activation: elu
       d2rl: False
 
@@ -69,7 +69,7 @@ params:
     schedule_type: standard
     kl_threshold: 0.016
     score_to_win: 1000000000
-    max_epochs: 20000
+    max_epochs: 5000
     save_best_after: 100
     save_frequency: 200
     print_stats: True
