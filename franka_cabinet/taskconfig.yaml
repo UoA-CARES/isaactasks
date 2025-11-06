@@ -2,7 +2,8 @@
 # ----------------------------------------
 # workspace:
 # TODO: rearrange the lay out
-workspace: "/home/lee/code/isaactasks/franka_cabinet"
+# workspace: "/home/lee/code/isaactasks/franka_cabinet"
+workspace: "franka_cabinet"
 env_cfg_path: "source/franka_cabinet/franka_cabinet/tasks/direct/franka_cabinet/franka_cabinet_env.py"
 logs_path: "logs/rl_games/franka_cabinet_direct"
 description: "to open the cabinet door"
@@ -14,6 +15,6 @@ num_envs: None
 seed: None
 checkpoint: None
 max_iterations: 1500
-python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
+# python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
 
 # python scripts/rl_games/train.py --task Template-Franka-Cabinet-Direct-v0 --headless

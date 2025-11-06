@@ -2,7 +2,8 @@
 # ----------------------------------------
 # workspace:
 # TODO: rearrange the lay out
-workspace: "/home/lee/code/isaactasks/masa_hand"
+# workspace: "/home/lee/code/isaactasks/masa_hand"
+workspace: "masa_hand"
 env_cfg_path: "source/masa_hand/masa_hand/tasks/direct/masa_hand/masa_hand_env.py"
 logs_path: "logs/rl_games/masa_hand"
 description: "to make the masa hand spin the object to a target orientation"
@@ -13,4 +14,4 @@ num_envs: None
 seed: None
 checkpoint: None
 max_iterations: None
-python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
+# python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python

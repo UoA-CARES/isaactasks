@@ -2,7 +2,8 @@
 # ----------------------------------------
 # workspace:
 # TODO: rearrange the lay out
-workspace: "/home/lee/code/isaactasks/allegro_hand"
+# workspace: "/home/lee/code/isaactasks/allegro_hand"
+workspace: "allegro_hand"
 env_cfg_path: "source/allegro_hand/allegro_hand/tasks/direct/allegro_hand/allegro_hand_env.py"
 logs_path: "logs/rl_games/allegro_hand"
 description: "to make the hand spin the object to a target orientation"
@@ -14,4 +15,4 @@ num_envs: None
 seed: None
 checkpoint: None
 max_iterations: 5000
-python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
+# python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python

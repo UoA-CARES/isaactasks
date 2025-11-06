@@ -2,7 +2,8 @@
 # ----------------------------------------
 # workspace:
 # TODO: rearrange the lay out
-workspace: "/home/lee/code/isaactasks/shadow_hand"
+# workspace: "/home/lee/code/isaactasks/shadow_hand"
+workspace: "shadow_hand"
 env_cfg_path: "source/shadow_hand/shadow_hand/tasks/direct/shadow_hand/shadow_hand_env.py"
 logs_path: "logs/rl_games/shadow_hand"
 description: "to make the shadow hand spin the object to a target orientation"
@@ -13,4 +14,4 @@ num_envs: None
 seed: None
 checkpoint: None
 max_iterations: None
-python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
+# python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
