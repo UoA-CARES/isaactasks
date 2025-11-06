@@ -186,12 +186,12 @@ class ShadowHandEnv(DirectRLEnv):
             self.cfg.fall_penalty,
             self.cfg.av_factor,
         )
-        for k, v in reward_components.items():
-            self.extras["log"][k] = v
-
         if "log" not in self.extras:
             self.extras["log"] = dict()
         self.extras["log"]["consecutive_successes"] = self.consecutive_successes.mean()
+        
+        for k, v in reward_components.items():
+            self.extras["log"][k] = v
 
         # reset goals if the goal has been reached
         goal_env_ids = self.reset_goal_buf.nonzero(as_tuple=False).squeeze(-1)
