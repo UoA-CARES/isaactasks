@@ -102,3 +102,33 @@ Task Name: Template-Shadow-Hand-Direct-v0
 Entry Point: isaaclab_tasks.direct.inhand_manipulation.inhand_manipulation_env:InHandManipulationEnv
 Config: isaaclab_tasks.direct.shadow_hand.shadow_hand_env_cfg:ShadowHandEnvCfg
 ```
+
+unit_5 = units_2048_1024_512_256
+
+unit_6 = units_2048_2048_1024_512   8*
+
+unit_7 = units_2048_1024_1024_512   4*
+
+unit_8 = units_2048_2048_1024_256   4*
+
+unit_9 = units_2048_2048_512_512     4*
+
+unit_10 = units_2048_1024_512_512     2*
+
+unit_11 = units_2048_1024_1024_256     2*
+
+unit_12 = units_2048_2048_512_256     2*
+
+unit_13 = units_4096_1024_512_256     2*
+
+512*512*256*128
+
+num_envs=8192
+
+16384
+
+32768
+
+65536
+
+5K
