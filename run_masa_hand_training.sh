@@ -3,6 +3,7 @@
 
 # Array of folders to process
 folders=(
+    "/home/lee/code/isaactasks/tunning_masa_hand/masa_hand_1"
     "/home/lee/code/isaactasks/tunning_masa_hand/masa_hand_2"
     "/home/lee/code/isaactasks/tunning_masa_hand/masa_hand_3"
     "/home/lee/code/isaactasks/tunning_masa_hand/masa_hand_4"
