@@ -1,7 +1,8 @@
 #!/bin/bash
 
+# TODO: logs sychonization
 # --- 1. CONFIGURE YOUR SETTINGS ---
-# TODO
+# Change it every time you run a new experiment
 TASK_DOCKER_NAME="isaac"
 TASK_NAME="Template-Ant-Direct-v0" # The --task argument for your script
 TASK_FOLDER="ant"          # The folder name of your task (the folder inside isaactasks/)

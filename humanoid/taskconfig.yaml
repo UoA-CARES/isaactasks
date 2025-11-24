@@ -1,7 +1,7 @@
 # taskconfig.yaml: Main task configuration
 # ----------------------------------------
 # workspace:
-# TODO: rearrange the lay out
+
 workspace: "/home/lee/code/isaactasks/humanoid"
 env_cfg_path: "source/humanoid/humanoid/tasks/direct/humanoid/humanoid_env.py"
 logs_path: "logs/rl_games/humanoid_direct"

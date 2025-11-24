@@ -1,7 +1,7 @@
 # taskconfig.yaml: Main task configuration
 # ----------------------------------------
 # workspace:
-# TODO: rearrange the lay out
+
 workspace: "/home/lee/code/isaactasks/masa_hand"
 env_cfg_path: "source/masa_hand/masa_hand/tasks/direct/masa_hand/masa_hand_env.py"
 logs_path: "logs/rl_games/masa_hand"

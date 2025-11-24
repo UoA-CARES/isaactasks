@@ -1,7 +1,7 @@
 # taskconfig.yaml: Main task configuration
 # ----------------------------------------
 # workspace:
-# TODO: rearrange the lay out
+
 workspace: "/home/lee/code/isaactasks/ant"
 env_cfg_path: "source/ant/ant/tasks/direct/ant/ant_env.py"
 logs_path: "logs/rl_games/ant_direct"
