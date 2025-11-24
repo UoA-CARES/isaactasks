@@ -1,14 +1,16 @@
 #!/bin/bash
 
 # --- 1. CONFIGURE YOUR SETTINGS ---
-TASK_ID_STR="isaac"
-
-# Your specific task details
-# (These are used INSIDE the container)
-TASK_NAME="Template-Ant-Direct-v0" # The --task argument for your script
-ABS_TASK_PATH="/home/lee/code/isaactasks/ant"
 # TODO
-LOCAL_LOGS_DIR="/home/lee/code/isaactasks/ant/logs/rl_games/ant_direct"
+TASK_DOCKER_NAME="isaac"
+TASK_NAME="Template-Ant-Direct-v0" # The --task argument for your script
+TASK_FOLDER="ant"          # The folder name of your task (the folder inside isaactasks/)
+LOGS_FOLDER_NAME="logs/rl_games/ant_direct"
+
+
+LOCAL_WORKSPACE="/home/lee/code/isaactasks"
+# Path on the remote machine
+WORKSPACE_DIR="${HOME}/.temp_isaac"
 
 
 # (You MUST change these variables)
@@ -16,8 +18,6 @@ LOCAL_LOGS_DIR="/home/lee/code/isaactasks/ant/logs/rl_games/ant_direct"
 REMOTE_USER="lee"
 REMOTE_HOST="127.0.0.1"
 
-# Path on the remote machine
-WORKSPACE_DIR="${HOME}/.temp_isaac"
 
 # This is the path INSIDE the container where results are saved by train.py
 # You MUST find this path. It's often inside 'logs', 'runs', or 'results'.
@@ -38,12 +38,13 @@ echo "Copying Docker scripts to remote host..."
 scp -q "run_inside_docker.sh" ${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/run_inside_docker.sh
 scp -q "run_on_remote_host.sh" ${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/run_on_remote_host.sh
 # Ensure the local task folder exists, compute its basename, and copy it to the remote workspace
+ABS_TASK_PATH="${LOCAL_WORKSPACE}/${TASK_FOLDER}"
 if [ ! -d "$ABS_TASK_PATH" ]; then
     echo "Local task path not found: $ABS_TASK_PATH"
     exit 1
 fi
 
-TASK_FOLDER="$(basename "$ABS_TASK_PATH")"
+# TASK_FOLDER="$(basename "$ABS_TASK_PATH")"
 echo "Copying task folder '$ABS_TASK_PATH' -> ${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/${TASK_FOLDER} (excluding logs and outputs)..."
 
 # Use rsync so we can exclude logs/ and outputs/ directories
@@ -51,12 +52,13 @@ rsync -avz --exclude='logs' --exclude='outputs' -e ssh "$ABS_TASK_PATH" "${REMOT
 
 # Execute the remote script on the remote host
 echo "Executing remote pipeline script..."
-ssh ${REMOTE_USER}@${REMOTE_HOST} "bash ${WORKSPACE_DIR}/run_on_remote_host.sh \"${TASK_ID_STR}\" \"${TASK_NAME}\" \"${TASK_FOLDER}\" \"${WORKSPACE_DIR}\""
+ssh ${REMOTE_USER}@${REMOTE_HOST} "bash ${WORKSPACE_DIR}/run_on_remote_host.sh \"${TASK_DOCKER_NAME}\" \"${TASK_NAME}\" \"${TASK_FOLDER}\" \"${WORKSPACE_DIR}\""
 
 # Copy logs back to the local machine
+LOCAL_LOGS_DIR="${LOCAL_WORKSPACE}/${TASK_FOLDER}/${LOGS_FOLDER_NAME}"
 echo "Copying logs from ${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/logs -> ${LOCAL_LOGS_DIR}"
 mkdir -p "${LOCAL_LOGS_DIR}"
-scp -r -q "${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/logs" "${LOCAL_LOGS_DIR}/" || {
+scp -r -q "${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/${LOGS_FOLDER_NAME}/*" "${LOCAL_LOGS_DIR}/" || {
     echo "Error: failed to copy logs from remote host." >&2
     exit 1
 }
