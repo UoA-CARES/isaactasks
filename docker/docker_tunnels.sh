@@ -1,9 +1,18 @@
 #!/bin/bash
 
-# Bidirectional sync tunnel between local folder and remote Docker container
+# Bidirectional/Single-direction sync tunnel between local folder and remote Docker container
 # Architecture: Local folder <--> Remote temp folder <--> Docker container folder
 #
-# Usage: ./docker_tunnels.sh <local_folder> <docker_folder> <container_name> <remote_user> <remote_ip>
+# Usage: ./docker_tunnels.sh <local_folder> <docker_folder> <container_name> <remote_user> <remote_ip> [sync_mode] [main_side]
+#
+# Arguments:
+#   local_folder    - Path to local folder
+#   docker_folder   - Path to folder inside Docker container
+#   container_name  - Name of Docker container
+#   remote_user     - SSH username for remote host
+#   remote_ip       - IP address of remote host
+#   sync_mode       - Optional: "bidirectional" (default) or "single"
+#   main_side       - Optional: "local" (default) or "docker" - only used when sync_mode is "single"
 #
 # Requirements:
 #   - Local: rsync, inotify-tools (inotifywait)
@@ -31,8 +40,10 @@ log_error() {
 }
 
 # Parse arguments
-if [ "$#" -ne 5 ]; then
-    log_error "Usage: $0 <local_folder> <docker_folder> <container_name> <remote_user> <remote_ip>"
+if [ "$#" -lt 5 ] || [ "$#" -gt 7 ]; then
+    log_error "Usage: $0 <local_folder> <docker_folder> <container_name> <remote_user> <remote_ip> [sync_mode] [main_side]"
+    log_error "  sync_mode: 'bidirectional' (default) or 'single'"
+    log_error "  main_side: 'local' (default) or 'docker' - only used when sync_mode is 'single'"
     exit 1
 fi
 
@@ -42,6 +53,22 @@ CONTAINER_NAME="$3"
 REMOTE_USER="$4"
 REMOTE_IP="$5"
 REMOTE_HOST="${REMOTE_USER}@${REMOTE_IP}"
+
+# Optional parameters
+SYNC_MODE="${6:-bidirectional}"  # Default to bidirectional
+MAIN_SIDE="${7:-local}"          # Default to local
+
+# Validate sync mode
+if [ "$SYNC_MODE" != "bidirectional" ] && [ "$SYNC_MODE" != "single" ]; then
+    log_error "Invalid sync_mode: $SYNC_MODE. Must be 'bidirectional' or 'single'"
+    exit 1
+fi
+
+# Validate main side
+if [ "$MAIN_SIDE" != "local" ] && [ "$MAIN_SIDE" != "docker" ]; then
+    log_error "Invalid main_side: $MAIN_SIDE. Must be 'local' or 'docker'"
+    exit 1
+fi
 
 # Global variables
 REMOTE_TEMP_FOLDER=""
@@ -235,7 +262,7 @@ initial_sync_to_docker() {
         exit 1
     }
 
-    log_info "Initial sync complete"
+    log_info "Initial sync complete (Local -> Docker)"
 }
 
 # Initial sync: Docker -> Remote temp -> Local
@@ -255,7 +282,7 @@ initial_sync_from_docker() {
         log_warn "Failed to sync remote to local"
     }
 
-    log_info "Initial sync from docker complete"
+    log_info "Initial sync complete (Docker -> Local)"
 }
 
 # Watch local folder and sync to remote/docker
@@ -320,6 +347,11 @@ main() {
     log_info "Local: $LOCAL_FOLDER"
     log_info "Remote: $REMOTE_HOST"
     log_info "Container: $CONTAINER_NAME:$DOCKER_FOLDER"
+    log_info "Sync mode: $SYNC_MODE"
+
+    if [ "$SYNC_MODE" = "single" ]; then
+        log_info "Main side: $MAIN_SIDE (conflicts will be resolved by overwriting from $MAIN_SIDE)"
+    fi
 
     # Validation steps
     validate_local_folder
@@ -329,19 +361,45 @@ main() {
     check_docker_container
     create_remote_temp_folder
 
-    # Initial bidirectional sync
-    initial_sync_to_docker
-    initial_sync_from_docker
+    # Perform initial sync based on mode
+    if [ "$SYNC_MODE" = "bidirectional" ]; then
+        log_info "Performing bidirectional initial sync..."
+        initial_sync_to_docker
+        initial_sync_from_docker
 
-    # Start background watchers
-    watch_local_to_remote &
-    LOCAL_TO_REMOTE_PID=$!
+        # Start background watchers for both directions
+        watch_local_to_remote &
+        LOCAL_TO_REMOTE_PID=$!
 
-    watch_docker_to_local &
-    REMOTE_TO_LOCAL_PID=$!
+        watch_docker_to_local &
+        REMOTE_TO_LOCAL_PID=$!
 
-    log_info "Sync tunnel active. Press Ctrl+C to stop."
-    log_info "Watching for changes..."
+        log_info "Bidirectional sync tunnel active. Press Ctrl+C to stop."
+        log_info "Watching for changes in both directions..."
+    else
+        # Single direction mode
+        if [ "$MAIN_SIDE" = "local" ]; then
+            log_info "Single-direction mode: Local is main, Docker will follow Local..."
+            initial_sync_to_docker
+
+            # Only watch local and sync to docker
+            watch_local_to_remote &
+            LOCAL_TO_REMOTE_PID=$!
+
+            log_info "Single-direction sync tunnel active (Local -> Docker). Press Ctrl+C to stop."
+            log_info "Watching for changes in local folder..."
+        else
+            log_info "Single-direction mode: Docker is main, Local will follow Docker..."
+            initial_sync_from_docker
+
+            # Only watch docker and sync to local
+            watch_docker_to_local &
+            REMOTE_TO_LOCAL_PID=$!
+
+            log_info "Single-direction sync tunnel active (Docker -> Local). Press Ctrl+C to stop."
+            log_info "Watching for changes in docker folder..."
+        fi
+    fi
 
     # Wait for background processes
     wait
