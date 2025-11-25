@@ -17,4 +17,4 @@ $PYTHON_CMD -m pip install -e source/${TASK_FOLDER} > /dev/null 2>&1
 
 echo '--- [DOCKER] 2. Running training ---'
 
-$PYTHON_CMD scripts/rl_games/train.py --task ${TASK_NAME} --headless  > /dev/null 2>&1
+$PYTHON_CMD scripts/rl_games/train.py --task ${TASK_NAME} --headless > /dev/null 2>&1

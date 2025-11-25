@@ -20,8 +20,8 @@ if [ -z "$TASK_DOCKER_NAME" ] || [ -z "$TASK_NAME" ] || [ -z "$TASK_FOLDER" ] ||
 fi
 
 echo "--- [REMOTE] 1. Setting up environments ---"
-mkdir -p ${WORKSPACE_DIR}
-cd ${WORKSPACE_DIR}
+# mkdir -p ${WORKSPACE_DIR}
+# cd ${WORKSPACE_DIR}
 echo "      [DONE] Files copied into remote workspace."
 
 docker pull nvcr.io/nvidia/isaac-lab:2.2.0
@@ -46,7 +46,7 @@ echo "      [DONE] New Docker container created."
 # Copy the Docker script into the container
 docker cp ${WORKSPACE_DIR}/run_inside_docker.sh ${TASK_DOCKER_NAME}:/workspace/run_inside_docker.sh
 docker cp ${WORKSPACE_DIR}/${TASK_FOLDER} ${TASK_DOCKER_NAME}:/workspace/isaac_task
-docker cp ${WORKSPACE_DIR}/${TASK_FOLDER} ${TASK_DOCKER_NAME}:/workspace/isaac_task
+# docker cp ${WORKSPACE_DIR}/${TASK_FOLDER} ${TASK_DOCKER_NAME}:/workspace/isaac_task
 echo "      [DONE] Files copied into container."
 
 echo "--- [REMOTE] 2. Starting Docker container ---"
