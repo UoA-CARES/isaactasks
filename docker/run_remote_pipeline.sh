@@ -49,7 +49,7 @@ fi
 echo "Copying task folder '$ABS_TASK_PATH' -> ${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/${TASK_FOLDER} (excluding logs and outputs)..."
 
 # Use rsync so we can exclude logs/ and outputs/ directories
-rsync -avz --exclude='logs' --exclude='outputs' -e ssh "$ABS_TASK_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/"
+rsync -avzq --exclude='logs' --exclude='outputs' -e ssh "$ABS_TASK_PATH" "${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/"
 
 # Execute the remote script on the remote host
 echo "Executing remote pipeline script..."
