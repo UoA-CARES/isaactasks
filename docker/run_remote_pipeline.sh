@@ -55,15 +55,15 @@ rsync -avzq --exclude='logs' --exclude='outputs' -e ssh "$ABS_TASK_PATH" "${REMO
 echo "Executing remote pipeline script..."
 ssh ${REMOTE_USER}@${REMOTE_HOST} "bash ${WORKSPACE_DIR}/run_on_remote_host.sh \"${TASK_DOCKER_NAME}\" \"${TASK_NAME}\" \"${TASK_FOLDER}\" \"${WORKSPACE_DIR}\""
 
-# # Copy logs back to the local machine
-# LOCAL_LOGS_DIR="${LOCAL_WORKSPACE}/${TASK_FOLDER}/${LOGS_FOLDER_NAME}"
-# echo "Copying logs from ${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/logs -> ${LOCAL_LOGS_DIR}"
-# mkdir -p "${LOCAL_LOGS_DIR}"
-# scp -r -q "${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/${LOGS_FOLDER_NAME}/*" "${LOCAL_LOGS_DIR}/" || {
-#     echo "Error: failed to copy logs from remote host." >&2
-#     exit 1
-# }
+# Copy logs back to the local machine
+LOCAL_LOGS_DIR="${LOCAL_WORKSPACE}/${TASK_FOLDER}/${LOGS_FOLDER_NAME}"
+echo "Copying logs from ${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/logs -> ${LOCAL_LOGS_DIR}"
+mkdir -p "${LOCAL_LOGS_DIR}"
+scp -r -q "${REMOTE_USER}@${REMOTE_HOST}:${WORKSPACE_DIR}/${LOGS_FOLDER_NAME}/*" "${LOCAL_LOGS_DIR}/" || {
+    echo "Error: failed to copy logs from remote host." >&2
+    exit 1
+}
 
-# echo "Logs successfully copied to ${LOCAL_LOGS_DIR}"
+echo "Logs successfully copied to ${LOCAL_LOGS_DIR}"
 
-# echo "Script finished."
+echo "Script finished."
