@@ -7,7 +7,7 @@ TASK_DOCKER_NAME="isaac"
 TASK_NAME="Template-Allegro-Hand-Direct-v0" # The --task argument for your script
 TASK_FOLDER="allegro_hand"          # The folder name of your task (the folder inside isaactasks/)
 LOGS_FOLDER_NAME="logs/rl_games/allegro_hand_direct"
-
+TASK_TRAINING_CONFIG=""
 
 LOCAL_WORKSPACE="/home/lee/code/isaactasks"
 # Path on the remote machine
@@ -51,7 +51,7 @@ rsync -avzq --exclude='logs' --exclude='outputs' -e ssh "$ABS_TASK_PATH" "${REMO
 
 # Execute the remote script on the remote host
 echo "Executing remote pipeline script..."
-ssh ${REMOTE_TARGET} "bash ${WORKSPACE_DIR}/run_on_remote_host.sh \"${TASK_DOCKER_NAME}\" \"${TASK_NAME}\" \"${TASK_FOLDER}\" \"${WORKSPACE_DIR}\""
+ssh ${REMOTE_TARGET} "bash ${WORKSPACE_DIR}/run_on_remote_host.sh \"${TASK_DOCKER_NAME}\" \"${TASK_NAME}\" \"${TASK_FOLDER}\" \"${WORKSPACE_DIR}\" \"${TASK_TRAINING_CONFIG}\""
 
 # Copy logs back to the local machine
 LOCAL_LOGS_DIR="${LOCAL_WORKSPACE}/${TASK_FOLDER}/${LOGS_FOLDER_NAME}"

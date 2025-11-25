@@ -13,6 +13,7 @@ TASK_DOCKER_NAME="$1"
 TASK_NAME="$2"
 TASK_FOLDER="$3"
 WORKSPACE_DIR="$4"
+TASK_TRAINING_CONFIG="$5"
 
 if [ -z "$TASK_DOCKER_NAME" ] || [ -z "$TASK_NAME" ] || [ -z "$TASK_FOLDER" ] || [ -z "$WORKSPACE_DIR" ]; then
     echo "Usage: $0 <TASK_DOCKER_NAME> <TASK_NAME> <TASK_FOLDER> <WORKSPACE_DIR>"
@@ -51,7 +52,7 @@ echo "      [DONE] Files copied into container."
 
 echo "--- [REMOTE] 2. Starting Docker container ---"
 docker exec ${TASK_DOCKER_NAME} /bin/bash /workspace/run_inside_docker.sh \
-    "${TASK_NAME}" "${TASK_FOLDER}"
+    "${TASK_NAME}" "${TASK_FOLDER}" "${TASK_TRAINING_CONFIG}"
 
 echo "--- [REMOTE] 3. Transferring logs files into local workspace ---"
 
