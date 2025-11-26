@@ -103,7 +103,6 @@ Entry Point: isaaclab_tasks.direct.inhand_manipulation.inhand_manipulation_env:I
 Config: isaaclab_tasks.direct.shadow_hand.shadow_hand_env_cfg:ShadowHandEnvCfg
 ```
 
-
 unit_5 = units_2048_1024_512_256
 
 unit_6 = units_2048_2048_1024_512   8*

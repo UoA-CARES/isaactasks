@@ -3,3 +3,4 @@ logs/
 outputs/
 **/logs/
 **/outputs/
+.test

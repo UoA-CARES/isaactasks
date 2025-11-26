@@ -1,9 +1,8 @@
 # taskconfig.yaml: Main task configuration
 # ----------------------------------------
 # workspace:
-# TODO: rearrange the lay out
-# workspace: "/home/lee/code/isaactasks/quadcopter"
-workspace: "quadcopter"
+
+workspace: "/home/lee/code/isaactasks/quadcopter"
 env_cfg_path: "source/quadcopter/quadcopter/tasks/direct/quadcopter/quadcopter_env.py"
 logs_path: "logs/rl_games/quadcopter_direct"
 description: "to make the quadcopter reach and hover near a fixed position"
@@ -15,7 +14,7 @@ num_envs: None
 seed: None
 checkpoint: None
 max_iterations: None
-# python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
+python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
 
 # python scripts/rl_games/train.py --task Template-Quadcopter-Direct-v0 --headless
 # python scripts/rl_games/play.py --task Template-Quadcopter-Direct-v0 --num_envs 4
