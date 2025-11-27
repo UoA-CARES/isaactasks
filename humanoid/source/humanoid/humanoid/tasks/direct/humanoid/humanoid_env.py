@@ -135,7 +135,7 @@ class LocomotionEnv(DirectRLEnv):
         # This measures how fast the humanoid is running towards the target
 
         self.extras["log"]["consecutive_successes"] = (self.potentials - self.prev_potentials).mean()
-        total_reward, reward_components = compute_rewards(
+        total_reward = compute_rewards(
             self.actions,
             self.reset_terminated,
             self.cfg.up_weight,
@@ -153,8 +153,6 @@ class LocomotionEnv(DirectRLEnv):
             self.cfg.alive_reward_scale,
             self.motor_effort_ratio,
         )
-        for k, v in reward_components.items():
-            self.extras["log"][k] = v
         return total_reward
 
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
@@ -204,7 +202,39 @@ def compute_rewards(
     alive_reward_scale: float,
     motor_effort_ratio: torch.Tensor,
 ):
-    return total_reward, reward_components
+    heading_weight_tensor = torch.ones_like(heading_proj) * heading_weight
+    heading_reward = torch.where(heading_proj > 0.8, heading_weight_tensor, heading_weight * heading_proj / 0.8)
+
+    # aligning up axis of robot and environment
+    up_reward = torch.zeros_like(heading_reward)
+    up_reward = torch.where(up_proj > 0.93, up_reward + up_weight, up_reward)
+
+    # energy penalty for movement
+    actions_cost = torch.sum(actions**2, dim=-1)
+    electricity_cost = torch.sum(
+        torch.abs(actions * dof_vel * dof_vel_scale) * motor_effort_ratio.unsqueeze(0),
+        dim=-1,
+    )
+
+    # dof at limit cost
+    dof_at_limit_cost = torch.sum(dof_pos_scaled > 0.98, dim=-1)
+
+    # reward for duration of staying alive
+    alive_reward = torch.ones_like(potentials) * alive_reward_scale
+    progress_reward = potentials - prev_potentials
+
+    total_reward = (
+        progress_reward
+        + alive_reward
+        + up_reward
+        + heading_reward
+        - actions_cost_scale * actions_cost
+        - energy_cost_scale * electricity_cost
+        - dof_at_limit_cost
+    )
+    # adjust reward for fallen agents
+    total_reward = torch.where(reset_terminated, torch.ones_like(total_reward) * death_cost, total_reward)
+    return total_reward
 
 
 @torch.jit.script
