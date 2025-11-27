@@ -12,10 +12,11 @@ git checkout main && git merge baseline && git push
 ## workspace
 Due to the nature of AI-driven coding, which frequently modifies the codebase, an independent and isolated testing environment is necessary. This environment serves as a workspace for undertaking all the "disruptive" modifications. This branch will not be uploaded to the remote repository and easy to rebuild.
 
-```python
+```bash
 # Update from main branch
-git switch workspace
+
+git branch -D workspace
 git fetch origin
-git reset --hard origin/main
+git checkout -b workspace origin/main
 python reward_func_purge.py
 ```
