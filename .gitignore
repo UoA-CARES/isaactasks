@@ -5,3 +5,5 @@ outputs/
 **/outputs/
 .test
 *.backup
+*.pyc
+__pycache__/
