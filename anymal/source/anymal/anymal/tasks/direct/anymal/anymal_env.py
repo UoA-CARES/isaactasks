@@ -124,7 +124,7 @@ class AnymalEnv(DirectRLEnv):
         ang_vel_error = torch.square(self._commands[:, 2] - self._robot.data.root_ang_vel_b[:, 2])
         self.extras["log"]["consecutive_successes"] = -(lin_vel_error + ang_vel_error).mean()
 
-        total_reward = compute_rewards(
+        total_reward, _ = compute_rewards(
             self._commands,
             self._robot.data.root_lin_vel_b,
             self._robot.data.root_ang_vel_b,
@@ -282,4 +282,5 @@ def compute_rewards(
         + flat_orientation_l2
     )
 
-    return total_reward
+    reward_components = None
+    return total_reward, reward_components

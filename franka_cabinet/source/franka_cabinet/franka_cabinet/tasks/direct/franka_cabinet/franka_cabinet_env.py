@@ -186,7 +186,7 @@ class FrankaCabinetEnv(DirectRLEnv):
 
         self.extras["log"]["consecutive_successes"] = self.consecutive_successes
 
-        return self.compute_rewards(
+        reward, _ = self.compute_rewards(
             self.actions,
             self._cabinet.data.joint_pos,
             self.robot_grasp_pos,
@@ -207,6 +207,7 @@ class FrankaCabinetEnv(DirectRLEnv):
             self.cfg.finger_reward_scale,
             self._robot.data.joint_pos,
         )
+        return reward
 
     def _reset_idx(self, env_ids: torch.Tensor | None):
         super()._reset_idx(env_ids)
@@ -366,7 +367,8 @@ class FrankaCabinetEnv(DirectRLEnv):
         rewards = torch.where(cabinet_dof_pos[:, 3] > 0.2, rewards + 0.25, rewards)
         rewards = torch.where(cabinet_dof_pos[:, 3] > 0.35, rewards + 0.25, rewards)
 
-        return rewards
+        reward_components = None
+        return rewards, reward_components
 
     def _compute_grasp_transforms(
         self,

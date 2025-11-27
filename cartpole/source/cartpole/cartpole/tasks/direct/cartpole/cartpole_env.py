@@ -85,7 +85,7 @@ class CartpoleEnv(DirectRLEnv):
         
         self.extras["log"]["consecutive_successes"] = consecutive_successes.item()
 
-        total_reward = compute_rewards(
+        total_reward, _ = compute_rewards(
             self.cfg.rew_scale_alive,
             self.cfg.rew_scale_terminated,
             self.cfg.rew_scale_pole_pos,
@@ -152,4 +152,5 @@ def compute_rewards(
     rew_cart_vel = rew_scale_cart_vel * torch.sum(torch.abs(cart_vel).unsqueeze(dim=1), dim=-1)
     rew_pole_vel = rew_scale_pole_vel * torch.sum(torch.abs(pole_vel).unsqueeze(dim=1), dim=-1)
     total_reward = rew_alive + rew_termination + rew_pole_pos + rew_cart_vel + rew_pole_vel
-    return total_reward
+    reward_components = None
+    return total_reward, reward_components

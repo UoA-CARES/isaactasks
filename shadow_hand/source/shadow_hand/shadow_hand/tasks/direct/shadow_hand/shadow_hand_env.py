@@ -164,7 +164,7 @@ class ShadowHandEnv(DirectRLEnv):
             self.cfg.av_factor,
         )
         (
-            total_reward
+            total_reward, _
             # self.reset_goal_buf,
             # self.successes[:],
             # self.consecutive_successes[:],
@@ -454,8 +454,8 @@ def compute_rewards(
     #     av_factor * finished_cons_successes / num_resets + (1.0 - av_factor) * consecutive_successes,
     #     consecutive_successes,
     # )
-
-    return reward  # , goal_resets, successes, cons_successes
+    reward_components = None
+    return reward, reward_components
 
 
 @torch.jit.script

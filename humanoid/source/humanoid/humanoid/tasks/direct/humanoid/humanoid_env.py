@@ -135,7 +135,7 @@ class LocomotionEnv(DirectRLEnv):
         # This measures how fast the humanoid is running towards the target
 
         self.extras["log"]["consecutive_successes"] = (self.potentials - self.prev_potentials).mean()
-        total_reward = compute_rewards(
+        total_reward, _ = compute_rewards(
             self.actions,
             self.reset_terminated,
             self.cfg.up_weight,
@@ -234,7 +234,8 @@ def compute_rewards(
     )
     # adjust reward for fallen agents
     total_reward = torch.where(reset_terminated, torch.ones_like(total_reward) * death_cost, total_reward)
-    return total_reward
+    reward_components = None
+    return reward, reward_components
 
 
 @torch.jit.script

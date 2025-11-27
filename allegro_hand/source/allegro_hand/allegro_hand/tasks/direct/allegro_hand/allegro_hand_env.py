@@ -164,7 +164,7 @@ class AllegroHandEnv(DirectRLEnv):
             self.cfg.av_factor,
         )
         (
-            total_reward
+            total_reward, _
         ) = compute_rewards(
             self.reset_buf,
             self.reset_goal_buf,
@@ -452,7 +452,8 @@ def compute_rewards(
     #     consecutive_successes,
     # )
 
-    return reward  # , goal_resets, successes, cons_successes
+    reward_components = None
+    return reward, reward_components
 
 
 
