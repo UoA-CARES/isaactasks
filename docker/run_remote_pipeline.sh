@@ -1,21 +1,33 @@
 #!/bin/bash
+# Usage: ./run_remote_pipeline.sh TASK_NAME TASK_FOLDER TASK_DOCKER_NAME \
+#          LOGS_FOLDER_NAME TASK_TRAINING_CONFIG LOCAL_WORKSPACE \
+#          WORKSPACE_DIR REMOTE_TARGET
+#
+# Example:
+#   ./run_remote_pipeline.sh Template-Allegro-Hand-Direct-v0 allegro_hand isaac \
+#     logs/rl_games/allegro_hand_direct "" /home/lee/code/isaactasks \
+#     ${HOME}/.temp_isaac lee@127.0.0.1
 
-# TODO: logs sychonization
-# --- 1. CONFIGURE YOUR SETTINGS ---
-# Change it every time you run a new experiment
-TASK_DOCKER_NAME="isaac"
-TASK_NAME="Template-Allegro-Hand-Direct-v0" # The --task argument for your script
-TASK_FOLDER="allegro_hand"          # The folder name of your task (the folder inside isaactasks/)
-LOGS_FOLDER_NAME="logs/rl_games/allegro_hand_direct"
-TASK_TRAINING_CONFIG=""
+# Parse command-line arguments
+if [ "$#" -ne 8 ]; then
+    echo "Error: Expected 8 arguments, got $#"
+    echo "Usage: $0 TASK_NAME TASK_FOLDER TASK_DOCKER_NAME LOGS_FOLDER_NAME TASK_TRAINING_CONFIG LOCAL_WORKSPACE WORKSPACE_DIR REMOTE_TARGET"
+    echo ""
+    echo "Example:"
+    echo "  $0 Template-Allegro-Hand-Direct-v0 allegro_hand isaac \\"
+    echo "    logs/rl_games/allegro_hand_direct \"\" /home/lee/code/isaactasks \\"
+    echo "    \${HOME}/.temp_isaac lee@127.0.0.1"
+    exit 1
+fi
 
-LOCAL_WORKSPACE="/home/lee/code/isaactasks"
-# Path on the remote machine
-WORKSPACE_DIR="${HOME}/.temp_isaac"
-
-# (You MUST change these variables)
-# myuser1@130.216.238.91
-REMOTE_TARGET="lee@127.0.0.1"
+TASK_NAME="$1"                # The --task argument for your script
+TASK_FOLDER="$2"              # The folder name of your task (the folder inside isaactasks/)
+TASK_DOCKER_NAME="$3"         # Docker container name
+LOGS_FOLDER_NAME="$4"         # Logs folder path
+TASK_TRAINING_CONFIG="$5"     # Training config (can be empty string)
+LOCAL_WORKSPACE="$6"          # Local workspace path
+WORKSPACE_DIR="$7"            # Path on the remote machine
+REMOTE_TARGET="$8"            # Remote target (user@host)
 
 
 # This is the path INSIDE the container where results are saved by train.py
