@@ -42,7 +42,7 @@ def purge_compute_rewards(file_path):
 
         # Reconstruct with minimal body
         # Add pass statement for valid Python syntax
-        return decorator + signature + '\n    pass\n    ' + return_stmt
+        return decorator + signature + '\n    \n    ' + return_stmt
 
     # Use DOTALL flag to match across newlines
     new_content = re.sub(pattern, process_function, content, flags=re.DOTALL)

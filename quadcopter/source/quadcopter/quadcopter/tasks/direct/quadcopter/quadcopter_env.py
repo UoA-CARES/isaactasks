@@ -105,7 +105,7 @@ class QuadcopterEnv(DirectRLEnv):
             self.extras["log"] = dict()
         self.extras["log"]["consecutive_successes"] = - distance_to_goal.mean()
 
-        return self.compute_reward(
+        return self.compute_rewards(
             self._robot.data.root_lin_vel_b,
             self._robot.data.root_ang_vel_b,
             self.cfg.lin_vel_reward_scale,
@@ -116,7 +116,7 @@ class QuadcopterEnv(DirectRLEnv):
         )
 
     @torch.jit.script
-    def compute_reward(
+    def compute_rewards(
         root_lin_vel_b: torch.Tensor, 
         root_ang_vel_b: torch.Tensor, 
         lin_vel_reward_scale: float, 
