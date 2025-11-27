@@ -17,4 +17,5 @@ Due to the nature of AI-driven coding, which frequently modifies the codebase, a
 git switch workspace
 git fetch origin
 git reset --hard origin/main
+python reward_func_purge.py
 ```
