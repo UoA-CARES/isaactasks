@@ -122,19 +122,21 @@ class MasaHandEnv(DirectRLEnv):
                 :, self.finger_bodies
             ]
 
-        if self.cfg.obs_type == "openai":
-            obs = self.compute_reduced_observations()
+        # if self.cfg.obs_type == "openai":
+        #     obs = self.compute_reduced_observations()
         elif self.cfg.obs_type == "full":
             obs = self.compute_full_observations()
         else:
             print("Unknown observations type!")
 
         if self.cfg.asymmetric_obs:
-            states = self.compute_full_state()
+            pass
+            # states = self.compute_full_state()
 
         observations = {"policy": obs}
         if self.cfg.asymmetric_obs:
-            observations = {"policy": obs, "critic": states}
+            # observations = {"policy": obs, "critic": states}
+            pass
         return observations
 
     def _get_rewards(self) -> torch.Tensor:
@@ -165,7 +167,10 @@ class MasaHandEnv(DirectRLEnv):
             self.cfg.av_factor,
         )
         (
-            total_reward, reward_components
+            total_reward
+            # self.reset_goal_buf,
+            # self.successes[:],
+            # self.consecutive_successes[:],
         ) = compute_rewards(
             self.reset_buf,
             self.reset_goal_buf,
@@ -187,12 +192,10 @@ class MasaHandEnv(DirectRLEnv):
             self.cfg.fall_penalty,
             self.cfg.av_factor,
         )
+
         if "log" not in self.extras:
             self.extras["log"] = dict()
         self.extras["log"]["consecutive_successes"] = self.consecutive_successes.mean()
-
-        for k, v in reward_components.items():
-            self.extras["log"][k] = v
 
         # reset goals if the goal has been reached
         goal_env_ids = self.reset_goal_buf.nonzero(as_tuple=False).squeeze(-1)
@@ -285,7 +288,7 @@ class MasaHandEnv(DirectRLEnv):
         self.reset_goal_buf[env_ids] = 0
 
     def _compute_intermediate_values(self):
-        # data for hand
+        # # data for hand
         self.fingertip_pos = self.hand.data.body_pos_w[:, self.finger_bodies]
         self.fingertip_rot = self.hand.data.body_quat_w[:, self.finger_bodies]
         self.fingertip_pos -= self.scene.env_origins.repeat((1, self.num_fingertips)).reshape(
@@ -303,22 +306,22 @@ class MasaHandEnv(DirectRLEnv):
         self.object_linvel = self.object.data.root_lin_vel_w
         self.object_angvel = self.object.data.root_ang_vel_w
 
-    def compute_reduced_observations(self):
-        # Per https://arxiv.org/pdf/1808.00177.pdf Table 2
-        #   Fingertip positions
-        #   Object Position, but not orientation
-        #   Relative target orientation
-        obs = torch.cat(
-            (
-                self.fingertip_pos.view(self.num_envs, self.num_fingertips * 3),
-                self.object_pos,
-                quat_mul(self.object_rot, quat_conjugate(self.goal_rot)),
-                self.actions,
-            ),
-            dim=-1,
-        )
+    # def compute_reduced_observations(self):
+    #     # Per https://arxiv.org/pdf/1808.00177.pdf Table 2
+    #     #   Fingertip positions
+    #     #   Object Position, but not orientation
+    #     #   Relative target orientation
+    #     obs = torch.cat(
+    #         (
+    #             self.fingertip_pos.view(self.num_envs, self.num_fingertips * 3),
+    #             self.object_pos,
+    #             quat_mul(self.object_rot, quat_conjugate(self.goal_rot)),
+    #             self.actions,
+    #         ),
+    #         dim=-1,
+    #     )
 
-        return obs
+    #     return obs
 
     def compute_full_observations(self):
         obs = torch.cat(
@@ -346,33 +349,33 @@ class MasaHandEnv(DirectRLEnv):
         )
         return obs
 
-    def compute_full_state(self):
-        states = torch.cat(
-            (
-                # hand
-                unscale(self.hand_dof_pos, self.hand_dof_lower_limits, self.hand_dof_upper_limits),
-                self.cfg.vel_obs_scale * self.hand_dof_vel,
-                # object
-                self.object_pos,
-                self.object_rot,
-                self.object_linvel,
-                self.cfg.vel_obs_scale * self.object_angvel,
-                # goal
-                self.in_hand_pos,
-                self.goal_rot,
-                quat_mul(self.object_rot, quat_conjugate(self.goal_rot)),
-                # fingertips
-                self.fingertip_pos.view(self.num_envs, self.num_fingertips * 3),
-                self.fingertip_rot.view(self.num_envs, self.num_fingertips * 4),
-                self.fingertip_velocities.view(self.num_envs, self.num_fingertips * 6),
-                self.cfg.force_torque_obs_scale
-                * self.fingertip_force_sensors.view(self.num_envs, self.num_fingertips * 6),
-                # actions
-                self.actions,
-            ),
-            dim=-1,
-        )
-        return states
+    # def compute_full_state(self):
+    #     states = torch.cat(
+    #         (
+    #             # hand
+    #             unscale(self.hand_dof_pos, self.hand_dof_lower_limits, self.hand_dof_upper_limits),
+    #             self.cfg.vel_obs_scale * self.hand_dof_vel,
+    #             # object
+    #             self.object_pos,
+    #             self.object_rot,
+    #             self.object_linvel,
+    #             self.cfg.vel_obs_scale * self.object_angvel,
+    #             # goal
+    #             self.in_hand_pos,
+    #             self.goal_rot,
+    #             quat_mul(self.object_rot, quat_conjugate(self.goal_rot)),
+    #             # fingertips
+    #             self.fingertip_pos.view(self.num_envs, self.num_fingertips * 3),
+    #             self.fingertip_rot.view(self.num_envs, self.num_fingertips * 4),
+    #             self.fingertip_velocities.view(self.num_envs, self.num_fingertips * 6),
+    #             self.cfg.force_torque_obs_scale
+    #             * self.fingertip_force_sensors.view(self.num_envs, self.num_fingertips * 6),
+    #             # actions
+    #             self.actions,
+    #         ),
+    #         dim=-1,
+    #     )
+    #     return states
 
 
 @torch.jit.script
@@ -422,7 +425,40 @@ def compute_rewards(
     av_factor: float,
 ):
 
-    return total_reward, reward_components
+    goal_dist = torch.norm(object_pos - target_pos, p=2, dim=-1)
+    rot_dist = rotation_distance(object_rot, target_rot)
+
+    dist_rew = goal_dist * dist_reward_scale
+    rot_rew = 1.0 / (torch.abs(rot_dist) + rot_eps) * rot_reward_scale
+
+    action_penalty = torch.sum(actions**2, dim=-1)
+
+    # Total reward is: position distance + orientation alignment + action regularization + success bonus + fall penalty
+    reward = dist_rew + rot_rew + action_penalty * action_penalty_scale
+
+    # Find out which envs hit the goal and update successes count
+    goal_resets = torch.where(torch.abs(rot_dist) <= success_tolerance, torch.ones_like(reset_goal_buf), reset_goal_buf)
+    successes = successes + goal_resets
+
+    # Success bonus: orientation is within `success_tolerance` of goal orientation
+    reward = torch.where(goal_resets == 1, reward + reach_goal_bonus, reward)
+
+    # Fall penalty: distance to the goal is larger than a threshold
+    reward = torch.where(goal_dist >= fall_dist, reward + fall_penalty, reward)
+
+    # # Check env termination conditions, including maximum success number
+    # resets = torch.where(goal_dist >= fall_dist, torch.ones_like(reset_buf), reset_buf)
+
+    # num_resets = torch.sum(resets)
+    # finished_cons_successes = torch.sum(successes * resets.float())
+
+    # cons_successes = torch.where(
+    #     num_resets > 0,
+    #     av_factor * finished_cons_successes / num_resets + (1.0 - av_factor) * consecutive_successes,
+    #     consecutive_successes,
+    # )
+
+    return reward  # , goal_resets, successes, cons_successes
 
 
 @torch.jit.script

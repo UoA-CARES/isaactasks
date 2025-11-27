@@ -105,7 +105,7 @@ class QuadcopterEnv(DirectRLEnv):
             self.extras["log"] = dict()
         self.extras["log"]["consecutive_successes"] = - distance_to_goal.mean()
 
-        total_reward, reward_components =  self.compute_rewards(
+        return self.compute_rewards(
             self._robot.data.root_lin_vel_b,
             self._robot.data.root_ang_vel_b,
             self.cfg.lin_vel_reward_scale,
