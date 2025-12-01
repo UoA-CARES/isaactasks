@@ -2,7 +2,7 @@
 # ----------------------------------------
 # workspace:
 
-workspace: "/home/lee/code/isaactasks/ant"
+workspace: "ant"
 env_cfg_path: "source/ant/ant/tasks/direct/ant/ant_env.py"
 logs_path: "logs/rl_games/ant_direct"
 description: "to make the ant run forward as fast as possible"

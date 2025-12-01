@@ -2,7 +2,7 @@
 # ----------------------------------------
 # workspace:
 
-workspace: "/home/lee/code/isaactasks/humanoid"
+workspace: "humanoid"
 env_cfg_path: "source/humanoid/humanoid/tasks/direct/humanoid/humanoid_env.py"
 logs_path: "logs/rl_games/humanoid_direct"
 description: "to make the humanoid run as fast as possible"
@@ -18,4 +18,4 @@ python_env: /home/lee/anaconda3/envs/env_isaaclab/bin/python
 
 
 # python scripts/rl_games/train.py --task Template-Humanoid-Direct-v0 --headless
-# tensorboard --logdir /home/lee/code/isaactasks/humanoid/
+# tensorboard --logdir humanoid/

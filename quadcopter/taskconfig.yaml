@@ -2,7 +2,7 @@
 # ----------------------------------------
 # workspace:
 
-workspace: "/home/lee/code/isaactasks/quadcopter"
+workspace: "quadcopter"
 env_cfg_path: "source/quadcopter/quadcopter/tasks/direct/quadcopter/quadcopter_env.py"
 logs_path: "logs/rl_games/quadcopter_direct"
 description: "to make the quadcopter reach and hover near a fixed position"

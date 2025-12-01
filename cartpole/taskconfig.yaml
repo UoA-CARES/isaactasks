@@ -2,7 +2,7 @@
 # ----------------------------------------
 # workspace:
 
-workspace: "/home/lee/code/isaactasks/cartpole"
+workspace: "cartpole"
 env_cfg_path: "source/cartpole/cartpole/tasks/direct/cartpole/cartpole_env.py"
 logs_path: "logs/rl_games/cartpole_direct"
 description: "to balance a pole on a cart so that the pole stays upright"
