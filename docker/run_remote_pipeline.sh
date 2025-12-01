@@ -7,7 +7,7 @@
 #   ./run_remote_pipeline.sh Template-Allegro-Hand-Direct-v0 allegro_hand isaac \
 #     logs/rl_games/allegro_hand_direct "" /home/lee/code/isaactasks \
 #     ${HOME}/.temp_isaac lee@127.0.0.1
-# # ./run_remote_pipeline.sh Template-Ant-Direct-v0 ant test logss "" /home/lee/code/isaactasks ${HOME}/.temp_isaac lee@127.0.0.1
+# # ./run_remote_pipeline.sh Template-Ant-Direct-v0 ant test ant/logs/rl_games/ant_direct "" /home/lee/code/isaactasks ${HOME}/.temp_isaac lee@127.0.0.1
 
 # Parse command-line arguments
 if [ "$#" -ne 8 ]; then
@@ -23,12 +23,14 @@ fi
 
 TASK_NAME="$1"                # The --task argument for your script
 TASK_FOLDER="$2"              # The folder name of your task (the folder inside isaactasks/)
-TASK_DOCKER_NAME="$3"         # Docker container name
+TASK_LOG_NAME="$3"         # Docker container name
 LOGS_FOLDER_NAME="$4"         # Logs folder path
 TASK_TRAINING_CONFIG="$5"     # Training config (can be empty string)
 LOCAL_WORKSPACE="$6"          # Local workspace path
 WORKSPACE_DIR="$7"            # Path on the remote machine
 REMOTE_TARGET="$8"            # Remote target (user@host)
+
+TASK_DOCKER_NAME="isaac"
 
 
 # This is the path INSIDE the container where results are saved by train.py
@@ -70,7 +72,14 @@ ssh ${REMOTE_TARGET} "bash ${WORKSPACE_DIR}/run_on_remote_host.sh \"${TASK_DOCKE
 LOCAL_LOGS_DIR="${LOCAL_WORKSPACE}/${TASK_FOLDER}/${LOGS_FOLDER_NAME}"
 echo "Copying logs from ${REMOTE_TARGET}:${WORKSPACE_DIR}/logs -> ${LOCAL_LOGS_DIR}"
 mkdir -p "${LOCAL_LOGS_DIR}"
-scp -r -q "${REMOTE_TARGET}:${WORKSPACE_DIR}/${LOGS_FOLDER_NAME}/*" "${LOCAL_LOGS_DIR}/" || {
+# Get the single sub-folder name from remote
+REMOTE_SUBFOLDER=$(ssh "${REMOTE_TARGET}" "ls -1 ${WORKSPACE_DIR}/${LOGS_FOLDER_NAME}/ | head -n 1") || {
+    echo "Error: failed to list remote logs directory." >&2
+    exit 1
+}
+
+# Copy the subfolder and rename it to TASK_LOG_NAME
+scp -r -q "${REMOTE_TARGET}:${WORKSPACE_DIR}/${LOGS_FOLDER_NAME}/${REMOTE_SUBFOLDER}" "${LOCAL_LOGS_DIR}/${TASK_LOG_NAME}" || {
     echo "Error: failed to copy logs from remote host." >&2
     exit 1
 }
