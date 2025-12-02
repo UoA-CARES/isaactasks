@@ -7,7 +7,7 @@
 #   ./run_remote_pipeline.sh Template-Allegro-Hand-Direct-v0 allegro_hand isaac \
 #     logs/rl_games/allegro_hand_direct "" /home/lee/code/isaactasks \
 #     ${HOME}/.temp_isaac lee@127.0.0.1
-# # ./run_remote_pipeline.sh Template-Ant-Direct-v0 ant test ant/logs/rl_games/ant_direct "" /home/lee/code/isaactasks ${HOME}/.temp_isaac lee@127.0.0.1
+# # ./run_remote_pipeline.sh Template-Ant-Direct-v0 ant test ant/logs/rl_games/ant_direct eval_1 /home/lee/code/isaactasks ${HOME}/.temp_isaac lee@127.0.0.1
 
 # Parse command-line arguments
 if [ "$#" -ne 8 ]; then
