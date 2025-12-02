@@ -57,7 +57,7 @@ docker exec ${TASK_DOCKER_NAME} /bin/bash /workspace/run_inside_docker.sh \
 echo "--- [REMOTE] 3. Transferring logs files into local workspace ---"
 
 # 4. Copying the logs back to the remote host's workspace
-docker cp ${TASK_DOCKER_NAME}:/workspace/isaac_task/logs ${WORKSPACE_DIR}/logs
+docker cp ${TASK_DOCKER_NAME}:/workspace/isaac_task/logs ${WORKSPACE_DIR}/${TASK_FOLDER}/logs
 
 echo "--- [REMOTE] 4. Stopping Docker ---"
 # delete docker container

@@ -7,12 +7,12 @@
 #   ./run_remote_pipeline.sh Template-Allegro-Hand-Direct-v0 allegro_hand isaac \
 #     logs/rl_games/allegro_hand_direct "" /home/lee/code/isaactasks \
 #     ${HOME}/.temp_isaac lee@127.0.0.1
-# # ./run_remote_pipeline.sh Template-Ant-Direct-v0 ant test ant/logs/rl_games/ant_direct eval_1 /home/lee/code/isaactasks ${HOME}/.temp_isaac lee@127.0.0.1
+# # ./run_remote_pipeline.sh Template-Ant-Direct-v0 ant eval_1 ant/logs/rl_games/ant_direct "" /home/lee/code/isaactasks ${HOME}/.temp_isaac lee@127.0.0.1
 
 # Parse command-line arguments
 if [ "$#" -ne 8 ]; then
     echo "Error: Expected 8 arguments, got $#"
-    echo "Usage: $0 TASK_NAME TASK_FOLDER TASK_DOCKER_NAME LOGS_FOLDER_NAME TASK_TRAINING_CONFIG LOCAL_WORKSPACE WORKSPACE_DIR REMOTE_TARGET"
+    echo "Usage: $0 TASK_NAME TASK_FOLDER TASK_LOG_NAME LOGS_FOLDER_NAME TASK_TRAINING_CONFIG LOCAL_WORKSPACE WORKSPACE_DIR REMOTE_TARGET"
     echo ""
     echo "Example:"
     echo "  $0 Template-Allegro-Hand-Direct-v0 allegro_hand isaac \\"
@@ -73,10 +73,12 @@ LOCAL_LOGS_DIR="${LOCAL_WORKSPACE}/${TASK_FOLDER}/${LOGS_FOLDER_NAME}"
 echo "Copying logs from ${REMOTE_TARGET}:${WORKSPACE_DIR}/logs -> ${LOCAL_LOGS_DIR}"
 mkdir -p "${LOCAL_LOGS_DIR}"
 # Get the single sub-folder name from remote
+echo "Remote logs subfolder: ssh "${REMOTE_TARGET}" "ls -1 ${WORKSPACE_DIR}/${LOGS_FOLDER_NAME}/ | head -n 1""
 REMOTE_SUBFOLDER=$(ssh "${REMOTE_TARGET}" "ls -1 ${WORKSPACE_DIR}/${LOGS_FOLDER_NAME}/ | head -n 1") || {
     echo "Error: failed to list remote logs directory." >&2
     exit 1
 }
+echo "Remote logs subfolder: ${REMOTE_SUBFOLDER}"
 
 # Copy the subfolder and rename it to TASK_LOG_NAME
 scp -r -q "${REMOTE_TARGET}:${WORKSPACE_DIR}/${LOGS_FOLDER_NAME}/${REMOTE_SUBFOLDER}" "${LOCAL_LOGS_DIR}/${TASK_LOG_NAME}" || {
