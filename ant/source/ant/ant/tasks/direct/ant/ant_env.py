@@ -287,7 +287,9 @@ def compute_rewards(
 
     # reward for duration of staying alive
     alive_reward = torch.ones_like(potentials) * alive_reward_scale
-    progress_reward = potentials - prev_potentials
+    progress_reward_raw = potentials - prev_potentials
+    progress_temp = torch.tensor(1.0, device=potentials.device)
+    progress_reward = torch.exp(progress_reward_raw / progress_temp)
 
     reward_components = {
         "progress_reward": progress_reward,
