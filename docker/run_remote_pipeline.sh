@@ -1,13 +1,26 @@
 #!/bin/bash
-# Usage: ./run_remote_pipeline.sh TASK_NAME TASK_FOLDER TASK_DOCKER_NAME \
+# Usage: ./run_remote_pipeline.sh TASK_NAME TASK_FOLDER TASK_LOG_NAME \
 #          LOGS_FOLDER_NAME TASK_TRAINING_CONFIG LOCAL_WORKSPACE \
 #          WORKSPACE_DIR REMOTE_TARGET
 #
-# Example:
-#   ./run_remote_pipeline.sh Template-Allegro-Hand-Direct-v0 allegro_hand isaac \
+# Parameters:
+#   TASK_NAME            - Task identifier (e.g., Template-Ant-Direct-v0)
+#   TASK_FOLDER          - Folder name inside isaactasks/ (e.g., ant, allegro_hand)
+#   TASK_LOG_NAME        - Name for the local log directory when copying back (e.g., eval_1, run_1)
+#   LOGS_FOLDER_NAME     - Path to logs folder on remote (e.g., ant/logs/rl_games/ant_direct)
+#   TASK_TRAINING_CONFIG - Training config file (use "" for default)
+#   LOCAL_WORKSPACE      - Local workspace path (e.g., /home/lee/code/isaactasks)
+#   WORKSPACE_DIR        - Temporary directory on remote machine (e.g., ${HOME}/.temp_isaac)
+#   REMOTE_TARGET        - SSH target (user@host, e.g., lee@127.0.0.1)
+#
+# Examples:
+#   ./run_remote_pipeline.sh Template-Ant-Direct-v0 ant eval_1 \
+#     ant/logs/rl_games/ant_direct "" /home/lee/code/isaactasks \
+#     ${HOME}/.temp_isaac lee@127.0.0.1
+#
+#   ./run_remote_pipeline.sh Template-Allegro-Hand-Direct-v0 allegro_hand run_1 \
 #     logs/rl_games/allegro_hand_direct "" /home/lee/code/isaactasks \
 #     ${HOME}/.temp_isaac lee@127.0.0.1
-# # ./run_remote_pipeline.sh Template-Ant-Direct-v0 ant eval_1 ant/logs/rl_games/ant_direct "" /home/lee/code/isaactasks ${HOME}/.temp_isaac lee@127.0.0.1
 
 # Parse command-line arguments
 if [ "$#" -ne 8 ]; then
@@ -15,15 +28,15 @@ if [ "$#" -ne 8 ]; then
     echo "Usage: $0 TASK_NAME TASK_FOLDER TASK_LOG_NAME LOGS_FOLDER_NAME TASK_TRAINING_CONFIG LOCAL_WORKSPACE WORKSPACE_DIR REMOTE_TARGET"
     echo ""
     echo "Example:"
-    echo "  $0 Template-Allegro-Hand-Direct-v0 allegro_hand isaac \\"
-    echo "    logs/rl_games/allegro_hand_direct \"\" /home/lee/code/isaactasks \\"
+    echo "  $0 Template-Ant-Direct-v0 ant eval_1 \\"
+    echo "    ant/logs/rl_games/ant_direct \"\" /home/lee/code/isaactasks \\"
     echo "    \${HOME}/.temp_isaac lee@127.0.0.1"
     exit 1
 fi
 
 TASK_NAME="$1"                # The --task argument for your script
 TASK_FOLDER="$2"              # The folder name of your task (the folder inside isaactasks/)
-TASK_LOG_NAME="$3"         # Docker container name
+TASK_LOG_NAME="$3"            # Name for the local log directory when copying back
 LOGS_FOLDER_NAME="$4"         # Logs folder path
 TASK_TRAINING_CONFIG="$5"     # Training config (can be empty string)
 LOCAL_WORKSPACE="$6"          # Local workspace path
