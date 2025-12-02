@@ -69,7 +69,7 @@ echo "Executing remote pipeline script..."
 ssh ${REMOTE_TARGET} "bash ${WORKSPACE_DIR}/run_on_remote_host.sh \"${TASK_DOCKER_NAME}\" \"${TASK_NAME}\" \"${TASK_FOLDER}\" \"${WORKSPACE_DIR}\" \"${TASK_TRAINING_CONFIG}\""
 
 # Copy logs back to the local machine
-LOCAL_LOGS_DIR="${LOCAL_WORKSPACE}/${TASK_FOLDER}/${LOGS_FOLDER_NAME}"
+LOCAL_LOGS_DIR="${LOCAL_WORKSPACE}/${LOGS_FOLDER_NAME}"
 echo "Copying logs from ${REMOTE_TARGET}:${WORKSPACE_DIR}/logs -> ${LOCAL_LOGS_DIR}"
 mkdir -p "${LOCAL_LOGS_DIR}"
 # Get the single sub-folder name from remote
