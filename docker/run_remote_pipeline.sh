@@ -15,7 +15,7 @@
 #
 # Examples:
 #   ./run_remote_pipeline.sh Template-Ant-Direct-v0 ant eval_1 \
-#     ant/logs/rl_games/ant_direct "" /home/lee/code/isaactasks \
+#     logs/rl_games/ant_direct "" /home/lee/code/isaactasks \
 #     ${HOME}/.temp_isaac lee@127.0.0.1
 #
 #   ./run_remote_pipeline.sh Template-Allegro-Hand-Direct-v0 allegro_hand run_1 \
