@@ -6,7 +6,7 @@ set -e
 PYTHON_CMD="/workspace/isaaclab/_isaac_sim/python.sh"
 
 # Task configuration (passed as arguments or environment variables)
-TASK_NAME="${1:-${TASK_NAME}}"
+ISAACLAB_TASK_NAME="${1:-${ISAACLAB_TASK_NAME}}"
 TASK_FOLDER="${2:-${TASK_FOLDER}}"
 TASK_TRAINING_CONFIG="""${3:-${TASK_TRAINING_CONFIG}}"
 
@@ -18,4 +18,4 @@ $PYTHON_CMD -m pip install -e source/${TASK_FOLDER} > /dev/null 2>&1
 
 echo '--- [DOCKER] 2. Running training ---'
 
-$PYTHON_CMD scripts/rl_games/train.py --task ${TASK_NAME} ${TASK_TRAINING_CONFIG} --headless > /dev/null 2>&1
+$PYTHON_CMD scripts/rl_games/train.py --task ${ISAACLAB_TASK_NAME} ${TASK_TRAINING_CONFIG} --headless > /dev/null 2>&1

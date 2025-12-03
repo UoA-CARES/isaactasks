@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "bashdb",
+            "request": "launch",
+            "name": "run_remote_pipeline",
+            "cwd": "/home/lee/code/isaactasks/docker/",
+            "program": "/home/lee/code/isaactasks/docker/run_remote_pipeline.sh",
+            "args": [
+                "Template-Ant-Direct-v0",
+                "/home/lee/code/isaactasks",
+                "ant",
+                "training_logs/test",
+                "\"\"",
+                "lee@127.0.0.1"
+            ]
+        }
+    ]
+}

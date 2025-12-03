@@ -7,3 +7,4 @@ outputs/
 *.backup
 *.pyc
 __pycache__/
+training_logs/

@@ -9,28 +9,20 @@
 set -e # Exit on error
 
 # --- Parse arguments ---
-TASK_DOCKER_NAME="$1"
-TASK_NAME="$2"
+DOCKER_NAME="$1"
+ISAACLAB_TASK_NAME="$2"
 TASK_FOLDER="$3"
-WORKSPACE_DIR="$4"
+TMP_WORKSPACE="$4"
 TASK_TRAINING_CONFIG="$5"
 
-if [ -z "$TASK_DOCKER_NAME" ] || [ -z "$TASK_NAME" ] || [ -z "$TASK_FOLDER" ] || [ -z "$WORKSPACE_DIR" ]; then
-    echo "Usage: $0 <TASK_DOCKER_NAME> <TASK_NAME> <TASK_FOLDER> <WORKSPACE_DIR>"
-    exit 1
-fi
-
 echo "--- [REMOTE] 1. Setting up environments ---"
-# mkdir -p ${WORKSPACE_DIR}
-# cd ${WORKSPACE_DIR}
-echo "      [DONE] Files copied into remote workspace."
 
 docker pull nvcr.io/nvidia/isaac-lab:2.2.0
 
 # Remove existing container if it exists
-docker rm -f ${TASK_DOCKER_NAME} 2>/dev/null || true
+docker rm -f ${DOCKER_NAME} 2>/dev/null || true
 
-docker run -d --name ${TASK_DOCKER_NAME} --entrypoint bash --gpus all -e "ACCEPT_EULA=Y" --network=host \
+docker run -d --name ${DOCKER_NAME} --entrypoint bash --gpus all -e "ACCEPT_EULA=Y" --network=host \
     -e "PRIVACY_CONSENT=Y" \
     -v ~/docker/isaac-sim/cache/kit:/isaac-sim/kit/cache:rw \
     -v ~/docker/isaac-sim/cache/ov:/root/.cache/ov:rw \
@@ -45,23 +37,23 @@ docker run -d --name ${TASK_DOCKER_NAME} --entrypoint bash --gpus all -e "ACCEPT
 echo "      [DONE] New Docker container created."
 
 # Copy the Docker script into the container
-docker cp ${WORKSPACE_DIR}/run_inside_docker.sh ${TASK_DOCKER_NAME}:/workspace/run_inside_docker.sh
-docker cp ${WORKSPACE_DIR}/${TASK_FOLDER} ${TASK_DOCKER_NAME}:/workspace/isaac_task
-# docker cp ${WORKSPACE_DIR}/${TASK_FOLDER} ${TASK_DOCKER_NAME}:/workspace/isaac_task
+docker cp ${TMP_WORKSPACE}/run_inside_docker.sh ${DOCKER_NAME}:/workspace/run_inside_docker.sh
+docker cp ${TMP_WORKSPACE}/${TASK_FOLDER} ${DOCKER_NAME}:/workspace/isaac_task
+# docker cp ${TMP_WORKSPACE}/${TASK_FOLDER} ${DOCKER_NAME}:/workspace/isaac_task
 echo "      [DONE] Files copied into container."
 
 echo "--- [REMOTE] 2. Starting Docker container ---"
-docker exec ${TASK_DOCKER_NAME} /bin/bash /workspace/run_inside_docker.sh \
-    "${TASK_NAME}" "${TASK_FOLDER}" "${TASK_TRAINING_CONFIG}"
+docker exec ${DOCKER_NAME} /bin/bash /workspace/run_inside_docker.sh \
+    "${ISAACLAB_TASK_NAME}" "${TASK_FOLDER}" "${TASK_TRAINING_CONFIG}"
 
 echo "--- [REMOTE] 3. Transferring logs files into local workspace ---"
 
 # 4. Copying the logs back to the remote host's workspace
-docker cp ${TASK_DOCKER_NAME}:/workspace/isaac_task/logs ${WORKSPACE_DIR}/${TASK_FOLDER}/logs
+docker cp ${DOCKER_NAME}:/workspace/isaac_task/logs ${TMP_WORKSPACE}/logs
 
 echo "--- [REMOTE] 4. Stopping Docker ---"
-# delete docker container
-docker rm -f ${TASK_DOCKER_NAME} 2>/dev/null || true
+# stop docker container
+docker stop ${DOCKER_NAME}
 
 echo "--- Pipeline finished successfully! ---"
-echo "Your results are on the remote host at: ${WORKSPACE_DIR}/IsaacLab/training_results/${TASK_NAME}"
+echo "Your results are on the remote host at: ${TMP_WORKSPACE}/logs"
