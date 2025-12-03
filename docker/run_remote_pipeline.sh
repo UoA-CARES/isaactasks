@@ -65,21 +65,58 @@ fi
 echo "Copying task folder '$ABS_TASK_PATH' -> ${REMOTE_TARGET}:${TMP_WORKSPACE}/${TASK_FOLDER} (excluding logs and outputs)..."
 rsync -avzq --exclude='logs' --exclude='outputs' -e ssh "$ABS_TASK_PATH" "${REMOTE_TARGET}:${TMP_WORKSPACE}/"
 
-# Execute the remote script on the remote host
-echo "Executing remote pipeline script..."
-ssh ${REMOTE_TARGET} "bash ${TMP_WORKSPACE}/run_on_remote_host.sh \"${DOCKER_NAME}\" \"${ISAACLAB_TASK_NAME}\" \"${TASK_FOLDER}\" \"${TMP_WORKSPACE}\" \"${TASK_TRAINING_CONFIG}\""
+# === PHASE 1: Setup Docker Container ===
+echo "=== Phase 1: Setting up Docker container on remote host ==="
+ssh ${REMOTE_TARGET} "bash ${TMP_WORKSPACE}/run_on_remote_host.sh \"${DOCKER_NAME}\" \"${ISAACLAB_TASK_NAME}\" \"${TASK_FOLDER}\" \"${TMP_WORKSPACE}\" \"${TASK_TRAINING_CONFIG}\" \"setup\""
+echo "Container setup complete!"
 
-# Copy logs back to the local machine
+# === PHASE 2: Start Log Sync Tunnel ===
+echo ""
+echo "=== Phase 2: Starting live log synchronization tunnel ==="
 LOCAL_LOGS_DIR="${LOCAL_WORKSPACE}/${LOGS_FOLDER_NAME}"
-echo "Copying logs from ${REMOTE_TARGET}:${TMP_WORKSPACE}/logs -> ${LOCAL_LOGS_DIR}"
+echo "Preparing local logs directory: ${LOCAL_LOGS_DIR}"
 mkdir -p "${LOCAL_LOGS_DIR}"
 
-# Copy the subfolder and rename it to TASK_LOG_NAME
-scp -r -q "${REMOTE_TARGET}:${TMP_WORKSPACE}/logs" "${LOCAL_LOGS_DIR}" || {
-    echo "Error: failed to copy logs from remote host." >&2
-    exit 1
+DOCKER_LOGS_PATH="/workspace/isaac_task/logs"
+REMOTE_USER=$(echo ${REMOTE_TARGET} | cut -d'@' -f1)
+REMOTE_IP=$(echo ${REMOTE_TARGET} | cut -d'@' -f2)
+
+# Start the tunnel in the background
+./docker_tunnels.sh \
+    "${LOCAL_LOGS_DIR}" \
+    "${DOCKER_LOGS_PATH}" \
+    "${DOCKER_NAME}" \
+    "${REMOTE_USER}" \
+    "${REMOTE_IP}" \
+    "single" \
+    "docker" &
+
+TUNNEL_PID=$!
+echo "Log sync tunnel started with PID: ${TUNNEL_PID}"
+
+# Cleanup function to stop tunnel
+cleanup_tunnel() {
+    if [ -n "${TUNNEL_PID}" ]; then
+        echo "Stopping log sync tunnel (PID: ${TUNNEL_PID})..."
+        kill ${TUNNEL_PID} 2>/dev/null || true
+        wait ${TUNNEL_PID} 2>/dev/null || true
+        echo "Log sync tunnel stopped"
+    fi
 }
 
-echo "Logs successfully copied to ${LOCAL_LOGS_DIR}"
+# Set trap to ensure tunnel is stopped on exit
+trap cleanup_tunnel EXIT INT TERM
+
+# Give the tunnel a moment to initialize and verify connection
+echo "Waiting for tunnel to initialize..."
+sleep 5
+
+# === PHASE 3: Execute Training ===
+echo ""
+echo "=== Phase 3: Starting training (logs will sync in real-time) ==="
+ssh ${REMOTE_TARGET} "bash ${TMP_WORKSPACE}/run_on_remote_host.sh \"${DOCKER_NAME}\" \"${ISAACLAB_TASK_NAME}\" \"${TASK_FOLDER}\" \"${TMP_WORKSPACE}\" \"${TASK_TRAINING_CONFIG}\" \"train\""
+
+echo ""
+echo "Training complete! Logs have been synchronized to ${LOCAL_LOGS_DIR}"
 
 echo "Script finished."

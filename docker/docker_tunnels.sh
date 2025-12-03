@@ -14,6 +14,11 @@
 #   sync_mode       - Optional: "bidirectional" (default) or "single"
 #   main_side       - Optional: "local" (default) or "docker" - only used when sync_mode is "single"
 #
+# Environment Variables:
+#   UPDATE_INTERVAL - Minimum seconds between syncs (default: 3)
+#                     Prevents rapid successive updates during file transfers
+#                     Example: UPDATE_INTERVAL=5 ./docker_tunnels.sh ...
+#
 # Requirements:
 #   - Local: rsync, inotify-tools (inotifywait)
 #   - Remote: rsync, docker access
@@ -77,6 +82,16 @@ REMOTE_TO_LOCAL_PID=""
 REMOTE_TO_DOCKER_PID=""
 DOCKER_TO_REMOTE_PID=""
 CLEANUP_DONE=false
+
+# Update interval configuration (in seconds)
+# This prevents updates from happening too rapidly
+# Can be overridden by environment variable UPDATE_INTERVAL
+DEFAULT_UPDATE_INTERVAL=3
+UPDATE_INTERVAL=${UPDATE_INTERVAL:-$DEFAULT_UPDATE_INTERVAL}
+LAST_LOCAL_SYNC=0
+LAST_DOCKER_SYNC=0
+SYNC_IN_PROGRESS_LOCAL=false
+SYNC_IN_PROGRESS_DOCKER=false
 
 # Validate local folder exists
 validate_local_folder() {
@@ -243,6 +258,53 @@ cleanup() {
 # Set up trap for cleanup
 trap cleanup EXIT INT TERM
 
+# Check if enough time has elapsed since last sync
+should_sync() {
+    local sync_type=$1
+    local current_time=$(date +%s)
+    local time_diff=0
+
+    if [ "$sync_type" = "local" ]; then
+        time_diff=$((current_time - LAST_LOCAL_SYNC))
+
+        # Check if sync is already in progress
+        if [ "$SYNC_IN_PROGRESS_LOCAL" = true ]; then
+            return 1
+        fi
+
+        # Check if enough time has elapsed
+        if [ $time_diff -lt $UPDATE_INTERVAL ]; then
+            return 1
+        fi
+    elif [ "$sync_type" = "docker" ]; then
+        time_diff=$((current_time - LAST_DOCKER_SYNC))
+
+        # Check if sync is already in progress
+        if [ "$SYNC_IN_PROGRESS_DOCKER" = true ]; then
+            return 1
+        fi
+
+        # Check if enough time has elapsed
+        if [ $time_diff -lt $UPDATE_INTERVAL ]; then
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
+# Update last sync timestamp
+update_sync_timestamp() {
+    local sync_type=$1
+    local current_time=$(date +%s)
+
+    if [ "$sync_type" = "local" ]; then
+        LAST_LOCAL_SYNC=$current_time
+    elif [ "$sync_type" = "docker" ]; then
+        LAST_DOCKER_SYNC=$current_time
+    fi
+}
+
 # Initial sync: Local -> Remote temp -> Docker
 initial_sync_to_docker() {
     log_info "Performing initial sync: Local -> Remote -> Docker..."
@@ -288,6 +350,7 @@ initial_sync_from_docker() {
 # Watch local folder and sync to remote/docker
 watch_local_to_remote() {
     log_info "Starting local -> remote -> docker sync watcher..."
+    log_info "Update interval: ${UPDATE_INTERVAL}s (preventing rapid successive updates)"
 
     while true; do
         inotifywait -r -e modify,create,delete,move \
@@ -297,19 +360,36 @@ watch_local_to_remote() {
             continue
         }
 
+        # Check if enough time has elapsed and no sync is in progress
+        if ! should_sync "local"; then
+            log_info "Skipping sync (too soon or sync in progress)"
+            sleep 0.5
+            continue
+        fi
+
+        # Mark sync as in progress
+        SYNC_IN_PROGRESS_LOCAL=true
+
         # Sync local to remote
         rsync -az --delete \
             -e "ssh" \
             "$LOCAL_FOLDER/" \
             "$REMOTE_HOST:$REMOTE_TEMP_FOLDER/" 2>/dev/null || {
             log_warn "Rsync failed during local->remote sync"
+            SYNC_IN_PROGRESS_LOCAL=false
             continue
         }
 
         # Sync remote to docker
         ssh "$REMOTE_HOST" "docker cp '$REMOTE_TEMP_FOLDER/.' '$CONTAINER_NAME:$DOCKER_FOLDER/'" 2>/dev/null || {
             log_warn "Docker cp failed during remote->docker sync"
+            SYNC_IN_PROGRESS_LOCAL=false
+            continue
         }
+
+        # Update timestamp and reset progress flag
+        update_sync_timestamp "local"
+        SYNC_IN_PROGRESS_LOCAL=false
 
         log_info "Synced local changes to docker"
     done
@@ -318,13 +398,23 @@ watch_local_to_remote() {
 # Watch docker folder and sync to remote/local
 watch_docker_to_local() {
     log_info "Starting docker -> remote -> local sync watcher..."
+    log_info "Update interval: ${UPDATE_INTERVAL}s (preventing rapid successive updates)"
 
     while true; do
         sleep 2  # Poll every 2 seconds (docker doesn't support inotify easily)
 
+        # Check if enough time has elapsed and no sync is in progress
+        if ! should_sync "docker"; then
+            continue
+        fi
+
+        # Mark sync as in progress
+        SYNC_IN_PROGRESS_DOCKER=true
+
         # Sync docker to remote temp
         ssh "$REMOTE_HOST" "docker cp '$CONTAINER_NAME:$DOCKER_FOLDER/.' '$REMOTE_TEMP_FOLDER/'" 2>/dev/null || {
             log_warn "Docker cp failed during docker->remote sync"
+            SYNC_IN_PROGRESS_DOCKER=false
             sleep 5
             continue
         }
@@ -335,9 +425,14 @@ watch_docker_to_local() {
             "$REMOTE_HOST:$REMOTE_TEMP_FOLDER/" \
             "$LOCAL_FOLDER/" 2>/dev/null || {
             log_warn "Rsync failed during remote->local sync"
+            SYNC_IN_PROGRESS_DOCKER=false
             sleep 5
             continue
         }
+
+        # Update timestamp and reset progress flag
+        update_sync_timestamp "docker"
+        SYNC_IN_PROGRESS_DOCKER=false
     done
 }
 
@@ -348,6 +443,7 @@ main() {
     log_info "Remote: $REMOTE_HOST"
     log_info "Container: $CONTAINER_NAME:$DOCKER_FOLDER"
     log_info "Sync mode: $SYNC_MODE"
+    log_info "Update interval: ${UPDATE_INTERVAL}s (minimum time between syncs)"
 
     if [ "$SYNC_MODE" = "single" ]; then
         log_info "Main side: $MAIN_SIDE (conflicts will be resolved by overwriting from $MAIN_SIDE)"
