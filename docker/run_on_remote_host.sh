@@ -35,18 +35,14 @@ if [ "$MODE" = "setup" ] || [ "$MODE" = "all" ]; then
         -v ~/docker/isaac-sim/logs:/root/.nvidia-omniverse/logs:rw \
         -v ~/docker/isaac-sim/data:/root/.local/share/ov/data:rw \
         -v ~/docker/isaac-sim/documents:/root/Documents:rw \
+        -v ${TMP_WORKSPACE}/${TASK_FOLDER}:/workspace/isaac_task:rw \
         nvcr.io/nvidia/isaac-lab:2.2.0 \
         -c "sleep infinity"
     echo "      [DONE] New Docker container created."
 
     # Copy the Docker script into the container
     docker cp ${TMP_WORKSPACE}/run_inside_docker.sh ${DOCKER_NAME}:/workspace/run_inside_docker.sh
-    docker cp ${TMP_WORKSPACE}/${TASK_FOLDER} ${DOCKER_NAME}:/workspace/isaac_task
     echo "      [DONE] Files copied into container."
-
-    # Create logs directory inside the container for tunnel sync
-    docker exec ${DOCKER_NAME} mkdir -p /workspace/isaac_task/logs
-    echo "      [DONE] Logs directory created in container."
 
     if [ "$MODE" = "setup" ]; then
         echo "--- [REMOTE] Setup complete. Container ready for training. ---"
@@ -64,7 +60,7 @@ if [ "$MODE" = "train" ] || [ "$MODE" = "all" ]; then
     # stop docker container
     # Final sync to ensure all logs are captured
     echo "Performing final sync..."
-    sleep 30
+    sleep 2
     docker stop ${DOCKER_NAME}
 
 

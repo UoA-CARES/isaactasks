@@ -62,61 +62,71 @@ fi
 
 # TASK_FOLDER="$(basename "$ABS_TASK_PATH")"
 # Use rsync so we can exclude logs/ and outputs/ directories
-echo "Copying task folder '$ABS_TASK_PATH' -> ${REMOTE_TARGET}:${TMP_WORKSPACE}/${TASK_FOLDER} (excluding logs and outputs)..."
+echo "Copying task folder '$ABS_TASK_PATH' -> ${REMOTE_TARGET}:${TMP_WORKSPACE}/${TASK_FOLDER} (excluding outputs and re-new logs)..."
 rsync -avzq --exclude='logs' --exclude='outputs' -e ssh "$ABS_TASK_PATH" "${REMOTE_TARGET}:${TMP_WORKSPACE}/"
+ssh ${REMOTE_TARGET} "mkdir -p \"${TMP_WORKSPACE}/${TASK_FOLDER}/logs\""
 
 # === PHASE 1: Setup Docker Container ===
 echo "=== Phase 1: Setting up Docker container on remote host ==="
 ssh ${REMOTE_TARGET} "bash ${TMP_WORKSPACE}/run_on_remote_host.sh \"${DOCKER_NAME}\" \"${ISAACLAB_TASK_NAME}\" \"${TASK_FOLDER}\" \"${TMP_WORKSPACE}\" \"${TASK_TRAINING_CONFIG}\" \"setup\""
 echo "Container setup complete!"
 
-# === PHASE 2: Start Log Sync Tunnel ===
+# === PHASE 2: Start Log Sync ===
 echo ""
-echo "=== Phase 2: Starting live log synchronization tunnel ==="
-LOCAL_LOGS_DIR="${LOCAL_WORKSPACE}/${LOGS_FOLDER_NAME}"
-echo "Preparing local logs directory: ${LOCAL_LOGS_DIR}"
+echo "=== Phase 2: Mounting remote logs via sshfs ==="
+
+# Check if sshfs is installed
+if ! command -v sshfs &> /dev/null; then
+    echo "Error: sshfs is not installed. Please install it:"
+    echo "  Ubuntu/Debian: sudo apt-get install sshfs"
+    echo "  Fedora/RHEL: sudo dnf install fuse-sshfs"
+    echo "  macOS: brew install macfuse && brew install gromgit/fuse/sshfs-mac"
+    exit 1
+fi
+
+# Define local logs directory
+LOCAL_LOGS_DIR="${ABS_TASK_PATH}/${LOGS_FOLDER_NAME}"
 mkdir -p "${LOCAL_LOGS_DIR}"
 
-DOCKER_LOGS_PATH="/workspace/isaac_task/logs"
-REMOTE_USER=$(echo ${REMOTE_TARGET} | cut -d'@' -f1)
-REMOTE_IP=$(echo ${REMOTE_TARGET} | cut -d'@' -f2)
+# Remote logs directory
+REMOTE_LOGS_DIR="${TMP_WORKSPACE}/${TASK_FOLDER}/logs"
 
-# Start the tunnel in the background
-./docker_tunnels.sh \
-    "${LOCAL_LOGS_DIR}" \
-    "${DOCKER_LOGS_PATH}" \
-    "${DOCKER_NAME}" \
-    "${REMOTE_USER}" \
-    "${REMOTE_IP}" \
-    "single" \
-    "docker" &
+echo "Mounting ${REMOTE_TARGET}:${REMOTE_LOGS_DIR} to ${LOCAL_LOGS_DIR}"
 
-TUNNEL_PID=$!
-echo "Log sync tunnel started with PID: ${TUNNEL_PID}"
+# Mount remote logs directory using sshfs for real-time access
+# Options:
+#   -o reconnect: automatically reconnect on connection loss
+#   -o ServerAliveInterval=15: keep connection alive
+#   -o ServerAliveCountMax=3: retry connection
+#   -o follow_symlinks: follow symlinks on remote
+sshfs "${REMOTE_TARGET}:${REMOTE_LOGS_DIR}" "${LOCAL_LOGS_DIR}" \
+    -o reconnect \
+    -o ServerAliveInterval=15 \
+    -o ServerAliveCountMax=3 \
+    -o follow_symlinks
 
-# Cleanup function to stop tunnel
-cleanup_tunnel() {
-    if [ -n "${TUNNEL_PID}" ]; then
-        echo "Stopping log sync tunnel (PID: ${TUNNEL_PID})..."
-        kill ${TUNNEL_PID} 2>/dev/null || true
-        wait ${TUNNEL_PID} 2>/dev/null || true
-        echo "Log sync tunnel stopped"
-    fi
+if [ $? -eq 0 ]; then
+    echo "Remote logs mounted successfully! TensorBoard can now access logs in real-time."
+else
+    echo "Error: Failed to mount remote logs directory"
+    exit 1
+fi
+
+# Setup cleanup trap to unmount on script exit
+cleanup() {
+    echo ""
+    echo "Unmounting remote logs directory..."
+    fusermount -u "${LOCAL_LOGS_DIR}" 2>/dev/null || umount "${LOCAL_LOGS_DIR}" 2>/dev/null || true
+    echo "Cleanup complete."
 }
-
-# Set trap to ensure tunnel is stopped on exit
-trap cleanup_tunnel EXIT INT TERM
-
-# Give the tunnel a moment to initialize and verify connection
-echo "Waiting for tunnel to initialize..."
-sleep 5
+trap cleanup EXIT INT TERM
 
 # === PHASE 3: Execute Training ===
 echo ""
-echo "=== Phase 3: Starting training (logs will sync in real-time) ==="
+echo "=== Phase 3: Starting training (logs accessible in real-time via sshfs) ==="
 ssh ${REMOTE_TARGET} "bash ${TMP_WORKSPACE}/run_on_remote_host.sh \"${DOCKER_NAME}\" \"${ISAACLAB_TASK_NAME}\" \"${TASK_FOLDER}\" \"${TMP_WORKSPACE}\" \"${TASK_TRAINING_CONFIG}\" \"train\""
 
 echo ""
-echo "Training complete! Logs have been synchronized to ${LOCAL_LOGS_DIR}"
+echo "Training complete! Logs are available at ${LOCAL_LOGS_DIR}"
 
 echo "Script finished."
