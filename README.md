@@ -19,4 +19,5 @@ git branch -D workspace
 git fetch origin
 git checkout -b workspace origin/main
 python reward_func_purge.py
+git add -A && git commit -m "workspace"
 ```
