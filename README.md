@@ -14,10 +14,5 @@ Due to the nature of AI-driven coding, which frequently modifies the codebase, a
 
 ```bash
 # Update from main branch
-
-git branch -D workspace
-git fetch origin
-git checkout -b workspace origin/main
-python reward_func_purge.py
-git add -A && git commit -m "workspace"
+./rebuild_workspace.sh
 ```
