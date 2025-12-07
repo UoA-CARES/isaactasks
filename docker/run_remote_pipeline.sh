@@ -84,14 +84,16 @@ if ! command -v sshfs &> /dev/null; then
     exit 1
 fi
 
-# Define local logs directory
-LOCAL_LOGS_DIR="${ABS_TASK_PATH}/${LOGS_FOLDER_NAME}"
-mkdir -p "${LOCAL_LOGS_DIR}"
+# Define permanent local logs directory (where files will be stored permanently)
+# This will be the mount point during training, then local storage after
+PERMANENT_LOGS_DIR="${ABS_TASK_PATH}/${LOGS_FOLDER_NAME}"
+mkdir -p "${PERMANENT_LOGS_DIR}"
 
 # Remote logs directory
 REMOTE_LOGS_DIR="${TMP_WORKSPACE}/${TASK_FOLDER}/logs"
 
-echo "Mounting ${REMOTE_TARGET}:${REMOTE_LOGS_DIR} to ${LOCAL_LOGS_DIR}"
+echo "Mounting ${REMOTE_TARGET}:${REMOTE_LOGS_DIR} to ${PERMANENT_LOGS_DIR}"
+echo "TensorBoard can access logs in real-time at: ${PERMANENT_LOGS_DIR}"
 
 # Mount remote logs directory using sshfs for real-time access
 # Options:
@@ -99,27 +101,27 @@ echo "Mounting ${REMOTE_TARGET}:${REMOTE_LOGS_DIR} to ${LOCAL_LOGS_DIR}"
 #   -o ServerAliveInterval=15: keep connection alive
 #   -o ServerAliveCountMax=3: retry connection
 #   -o follow_symlinks: follow symlinks on remote
-sshfs "${REMOTE_TARGET}:${REMOTE_LOGS_DIR}" "${LOCAL_LOGS_DIR}" \
+sshfs "${REMOTE_TARGET}:${REMOTE_LOGS_DIR}" "${PERMANENT_LOGS_DIR}" \
     -o reconnect \
     -o ServerAliveInterval=15 \
     -o ServerAliveCountMax=3 \
     -o follow_symlinks
 
 if [ $? -eq 0 ]; then
-    echo "Remote logs mounted successfully! TensorBoard can now access logs in real-time."
+    echo "Remote logs mounted successfully! TensorBoard can now access logs in real-time at ${PERMANENT_LOGS_DIR}"
 else
     echo "Error: Failed to mount remote logs directory"
     exit 1
 fi
 
-# Setup cleanup trap to unmount on script exit
-cleanup() {
-    echo ""
-    echo "Unmounting remote logs directory..."
-    fusermount -u "${LOCAL_LOGS_DIR}" 2>/dev/null || umount "${LOCAL_LOGS_DIR}" 2>/dev/null || true
-    echo "Cleanup complete."
-}
-trap cleanup EXIT INT TERM
+# # Setup cleanup trap to unmount on script exit
+# cleanup() {
+#     echo ""
+#     echo "Unmounting remote logs directory..."
+#     fusermount -u "${LOCAL_LOGS_DIR}" 2>/dev/null || umount "${LOCAL_LOGS_DIR}" 2>/dev/null || true
+#     echo "Cleanup complete."
+# }
+# trap cleanup EXIT INT TERM
 
 # === PHASE 3: Execute Training ===
 echo ""
@@ -127,6 +129,53 @@ echo "=== Phase 3: Starting training (logs accessible in real-time via sshfs) ==
 ssh ${REMOTE_TARGET} "bash ${TMP_WORKSPACE}/run_on_remote_host.sh \"${DOCKER_NAME}\" \"${ISAACLAB_TASK_NAME}\" \"${TASK_FOLDER}\" \"${TMP_WORKSPACE}\" \"${TASK_TRAINING_CONFIG}\" \"train\""
 
 echo ""
-echo "Training complete! Logs are available at ${LOCAL_LOGS_DIR}"
+echo "Training complete!"
 
+# === PHASE 4: Localize logs before unmounting ===
+echo ""
+echo "=== Phase 4: Localizing logs from remote to local storage ==="
+
+# Create a temporary local folder to store the copy
+TEMP_LOCAL_LOGS="${ABS_TASK_PATH}/.temp_logs_${TMP_TASK_ID}"
+mkdir -p "${TEMP_LOCAL_LOGS}"
+
+echo "Copying logs to temporary local folder..."
+# Copy all files from the mounted directory to a temporary local folder
+if rsync -aq --delete "${PERMANENT_LOGS_DIR}/" "${TEMP_LOCAL_LOGS}/"; then
+    echo "Logs copied successfully to temporary local folder"
+else
+    echo "Error: Failed to copy logs to temporary local storage"
+    echo "Attempting to unmount anyway..."
+fi
+
+# Unmount the sshfs (PERMANENT_LOGS_DIR will become empty after this)
+echo ""
+echo "Unmounting remote logs directory..."
+fusermount -u "${PERMANENT_LOGS_DIR}" 2>/dev/null || umount "${PERMANENT_LOGS_DIR}" 2>/dev/null
+if [ $? -eq 0 ]; then
+    echo "Remote logs unmounted successfully."
+else
+    echo "Warning: Failed to unmount remote logs directory. You may need to manually unmount:"
+    echo "  fusermount -u \"${PERMANENT_LOGS_DIR}\" (Linux)"
+    echo "  umount \"${PERMANENT_LOGS_DIR}\" (macOS)"
+    exit 1
+fi
+
+# Now copy the localized logs back to PERMANENT_LOGS_DIR
+echo ""
+echo "Copying localized logs back to ${PERMANENT_LOGS_DIR}..."
+if rsync -aq --delete "${TEMP_LOCAL_LOGS}/" "${PERMANENT_LOGS_DIR}/"; then
+    echo "Logs successfully stored in ${PERMANENT_LOGS_DIR}"
+else
+    echo "Error: Failed to copy logs back to permanent storage"
+    echo "Your logs are still available in: ${TEMP_LOCAL_LOGS}"
+    exit 1
+fi
+
+# Clean up the temporary local folder
+echo "Cleaning up temporary folder..."
+rm -rf "${TEMP_LOCAL_LOGS}"
+
+echo ""
+echo "All logs are now safely stored locally in: ${PERMANENT_LOGS_DIR}"
 echo "Script finished."

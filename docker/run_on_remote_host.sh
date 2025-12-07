@@ -60,7 +60,7 @@ if [ "$MODE" = "train" ] || [ "$MODE" = "all" ]; then
     # stop docker container
     # Final sync to ensure all logs are captured
     echo "Performing final sync..."
-    sleep 2
+    sleep 10
     docker stop ${DOCKER_NAME}
 
 
