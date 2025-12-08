@@ -105,7 +105,8 @@ sshfs "${REMOTE_TARGET}:${REMOTE_LOGS_DIR}" "${PERMANENT_LOGS_DIR}" \
     -o reconnect \
     -o ServerAliveInterval=15 \
     -o ServerAliveCountMax=3 \
-    -o follow_symlinks
+    -o follow_symlinks \
+    -o ro
 
 if [ $? -eq 0 ]; then
     echo "Remote logs mounted successfully! TensorBoard can now access logs in real-time at ${PERMANENT_LOGS_DIR}"
