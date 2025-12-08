@@ -8,3 +8,4 @@ outputs/
 *.pyc
 __pycache__/
 training_logs/
+.running_outputs/
