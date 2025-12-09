@@ -4,7 +4,7 @@
 
 workspace: "allegro_hand"
 env_cfg_path: "source/allegro_hand/allegro_hand/tasks/direct/allegro_hand/allegro_hand_env.py"
-logs_path: "logs/rl_games/allegro_hand"
+logs_path: "training_logs"
 description: "to make the hand spin the object to a target orientation"
 
 
