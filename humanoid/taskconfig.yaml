@@ -4,7 +4,7 @@
 
 workspace: "humanoid"
 env_cfg_path: "source/humanoid/humanoid/tasks/direct/humanoid/humanoid_env.py"
-logs_path: "logs/rl_games/humanoid_direct"
+logs_path: "training_logs"
 description: "to make the humanoid run as fast as possible"
 
 

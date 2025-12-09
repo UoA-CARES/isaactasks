@@ -4,7 +4,7 @@
 
 workspace: "anymal"
 env_cfg_path: "source/anymal/anymal/tasks/direct/anymal/anymal_env.py"
-logs_path: "logs/rl_games/anymal_c_rough_direct"
+logs_path: "training_logs"
 description: "to make the quadruped follow randomly chosen x,y, and yaw target velocities"
 
 
