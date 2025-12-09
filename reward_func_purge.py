@@ -60,7 +60,7 @@ def purge_compute_rewards(file_path):
 
 def main():
     """Main execution function."""
-    print("Starting reward function purge...\n")
+    print("Starting total_reward function purge...\n")
 
     # Get the directory to search (default to current directory)
     search_dir = sys.argv[1] if len(sys.argv) > 1 else "."
@@ -112,7 +112,7 @@ def main():
                 print(f"    Restored from backup")
 
     print(f"\n{'='*60}")
-    print(f"Reward function purge complete!")
+    print(f"total_reward function purge complete!")
     print(f"Files modified: {modified_count}")
     print(f"Errors: {error_count}")
 

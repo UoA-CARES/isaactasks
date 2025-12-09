@@ -97,7 +97,7 @@ class AnymalCFlatEnvCfg(DirectRLEnvCfg):
         prim_path="/World/envs/env_.*/Robot/.*", history_length=3, update_period=0.005, track_air_time=True
     )
 
-    # reward scales
+    # total_reward scales
     lin_vel_reward_scale = 1.0
     yaw_rate_reward_scale = 0.5
     z_vel_reward_scale = -2.0
@@ -146,5 +146,5 @@ class AnymalEnvCfg(AnymalCFlatEnvCfg):
         mesh_prim_paths=["/World/ground"],
     )
 
-    # reward scales (override from flat config)
+    # total_reward scales (override from flat config)
     flat_orientation_reward_scale = 0.0

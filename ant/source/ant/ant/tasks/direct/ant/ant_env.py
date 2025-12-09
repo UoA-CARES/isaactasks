@@ -285,7 +285,7 @@ def compute_rewards(
     # dof at limit cost
     dof_at_limit_cost = torch.sum(dof_pos_scaled > 0.98, dim=-1)
 
-    # reward for duration of staying alive
+    # total_reward for duration of staying alive
     alive_reward = torch.ones_like(potentials) * alive_reward_scale
     progress_reward_raw = potentials - prev_potentials
     progress_temp = torch.tensor(1.0, device=potentials.device)
@@ -310,7 +310,7 @@ def compute_rewards(
         - energy_cost_scale * electricity_cost
         - dof_at_limit_cost
     )
-    # adjust reward for fallen agents
+    # adjust total_reward for fallen agents
     total_reward = torch.where(reset_terminated, torch.ones_like(total_reward) * death_cost, total_reward)
     return total_reward, reward_components
 

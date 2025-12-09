@@ -244,7 +244,7 @@ def compute_rewards(
     # flat orientation
     flat_orientation = torch.sum(torch.square(projected_gravity_b[:, :2]), dim=1)
 
-    # Calculate individual reward components
+    # Calculate individual total_reward components
     track_lin_vel_xy_exp = lin_vel_error_mapped * lin_vel_reward_scale * step_dt
     track_ang_vel_z_exp = yaw_rate_error_mapped * yaw_rate_reward_scale * step_dt
     lin_vel_z_l2 = z_vel_error * z_vel_reward_scale * step_dt
@@ -268,7 +268,7 @@ def compute_rewards(
     episode_sums["undesired_contacts"] += undesired_contacts_reward
     episode_sums["flat_orientation_l2"] += flat_orientation_l2
 
-    # Total reward
+    # Total total_reward
     total_reward = (
         track_lin_vel_xy_exp
         + track_ang_vel_z_exp

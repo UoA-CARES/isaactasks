@@ -433,18 +433,18 @@ def compute_rewards(
 
     action_penalty = torch.sum(actions**2, dim=-1)
 
-    # Total reward is: position distance + orientation alignment + action regularization + success bonus + fall penalty
-    reward = dist_rew + rot_rew + action_penalty * action_penalty_scale
+    # Total total_reward is: position distance + orientation alignment + action regularization + success bonus + fall penalty
+    total_reward = dist_rew + rot_rew + action_penalty * action_penalty_scale
 
     # Find out which envs hit the goal and update successes count
     goal_resets = torch.where(torch.abs(rot_dist) <= success_tolerance, torch.ones_like(reset_goal_buf), reset_goal_buf)
     successes = successes + goal_resets
 
     # Success bonus: orientation is within `success_tolerance` of goal orientation
-    reward = torch.where(goal_resets == 1, reward + reach_goal_bonus, reward)
+    total_reward = torch.where(goal_resets == 1, total_reward + reach_goal_bonus, total_reward)
 
     # Fall penalty: distance to the goal is larger than a threshold
-    reward = torch.where(goal_dist >= fall_dist, reward + fall_penalty, reward)
+    total_reward = torch.where(goal_dist >= fall_dist, total_reward + fall_penalty, total_reward)
 
     # # Check env termination conditions, including maximum success number
     # resets = torch.where(goal_dist >= fall_dist, torch.ones_like(reset_buf), reset_buf)
@@ -459,7 +459,7 @@ def compute_rewards(
     # )
 
     reward_components = None
-    return reward, reward_components
+    return total_reward, reward_components
 
 
 @torch.jit.script
@@ -493,18 +493,18 @@ def compute_consecutive_successes(
 
     # action_penalty = torch.sum(actions**2, dim=-1)
 
-    # # Total reward is: position distance + orientation alignment + action regularization + success bonus + fall penalty
-    # reward = dist_rew + rot_rew + action_penalty * action_penalty_scale
+    # # Total total_reward is: position distance + orientation alignment + action regularization + success bonus + fall penalty
+    # total_reward = dist_rew + rot_rew + action_penalty * action_penalty_scale
 
     # Find out which envs hit the goal and update successes count
     goal_resets = torch.where(torch.abs(rot_dist) <= success_tolerance, torch.ones_like(reset_goal_buf), reset_goal_buf)
     successes = successes + goal_resets
 
     # # Success bonus: orientation is within `success_tolerance` of goal orientation
-    # reward = torch.where(goal_resets == 1, reward + reach_goal_bonus, reward)
+    # total_reward = torch.where(goal_resets == 1, total_reward + reach_goal_bonus, total_reward)
 
     # # Fall penalty: distance to the goal is larger than a threshold
-    # reward = torch.where(goal_dist >= fall_dist, reward + fall_penalty, reward)
+    # total_reward = torch.where(goal_dist >= fall_dist, total_reward + fall_penalty, total_reward)
 
     # Check env termination conditions, including maximum success number
     resets = torch.where(goal_dist >= fall_dist, torch.ones_like(reset_buf), reset_buf)

@@ -150,7 +150,7 @@ class FrankaCabinetEnvCfg(DirectRLEnvCfg):
     action_scale = 7.5
     dof_velocity_scale = 0.1
 
-    # reward scales
+    # total_reward scales
     dist_reward_scale = 1.5
     rot_reward_scale = 1.5
     open_reward_scale = 10.0

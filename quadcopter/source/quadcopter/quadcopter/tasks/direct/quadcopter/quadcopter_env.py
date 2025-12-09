@@ -134,12 +134,12 @@ class QuadcopterEnv(DirectRLEnv):
             "ang_vel": ang_vel * ang_vel_reward_scale * step_dt,
             "distance_to_goal": distance_to_goal_mapped * distance_to_goal_reward_scale * step_dt,
         }
-        reward = torch.sum(torch.stack(list(rewards.values())), dim=0)
+        total_reward = torch.sum(torch.stack(list(rewards.values())), dim=0)
         # Logging
         # for key, value in rewards.items():
         #     self._episode_sums[key] += value
         reward_components = None
-        return reward, reward_components
+        return total_reward, reward_components
 
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
         time_out = self.episode_length_buf >= self.max_episode_length - 1

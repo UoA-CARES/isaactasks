@@ -105,7 +105,7 @@ class AllegroHandEnvCfg(DirectRLEnvCfg):
     reset_position_noise = 0.01  # range of position at reset
     reset_dof_pos_noise = 0.2  # range of dof pos at reset
     reset_dof_vel_noise = 0.0  # range of dof vel at reset
-    # reward scales
+    # total_reward scales
     dist_reward_scale = -10.0
     rot_reward_scale = 1.0
     rot_eps = 0.1

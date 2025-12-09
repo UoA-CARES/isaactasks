@@ -186,7 +186,7 @@ class FrankaCabinetEnv(DirectRLEnv):
 
         self.extras["log"]["consecutive_successes"] = self.consecutive_successes
 
-        reward, _ = self.compute_rewards(
+        total_reward, _ = self.compute_rewards(
             self.actions,
             self._cabinet.data.joint_pos,
             self.robot_grasp_pos,
@@ -207,7 +207,7 @@ class FrankaCabinetEnv(DirectRLEnv):
             self.cfg.finger_reward_scale,
             self._robot.data.joint_pos,
         )
-        return reward
+        return total_reward
 
     def _reset_idx(self, env_ids: torch.Tensor | None):
         super()._reset_idx(env_ids)
@@ -322,7 +322,7 @@ class FrankaCabinetEnv(DirectRLEnv):
         dot2 = (
             torch.bmm(axis3.view(num_envs, 1, 3), axis4.view(num_envs, 3, 1)).squeeze(-1).squeeze(-1)
         )  # alignment of up axis for gripper
-        # reward for matching the orientation of the hand to the drawer (fingers wrapped)
+        # total_reward for matching the orientation of the hand to the drawer (fingers wrapped)
         rot_reward = 0.5 * (torch.sign(dot1) * dot1**2 + torch.sign(dot2) * dot2**2)
 
         # regularization on the actions (summed for each environment)
