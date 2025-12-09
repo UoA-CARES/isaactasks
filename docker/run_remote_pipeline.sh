@@ -34,10 +34,10 @@ TASK_TRAINING_CONFIG="$5"     # Training config (can be empty string)
 REMOTE_TARGET="$6"            # Remote target (user@host)
 
 # Fixed parameters
-TMP_REMOTE_ROOT="${HOME}/.temp_isaac"
 TMP_TASK_ID="$(date +%Y%m%d_%H%M%S)_$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)"
 DOCKER_NAME=$TMP_TASK_ID
 
+TMP_REMOTE_ROOT="\${HOME}/.temp_isaac"
 TMP_WORKSPACE="${TMP_REMOTE_ROOT}/${TMP_TASK_ID}"
 # --- DO NOT EDIT BELOW THIS LINE ---
 
