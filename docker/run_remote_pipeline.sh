@@ -94,6 +94,7 @@ REMOTE_LOGS_DIR="${TMP_WORKSPACE}/${TASK_FOLDER}/logs"
 
 echo "Mounting ${REMOTE_TARGET}:${REMOTE_LOGS_DIR} to ${PERMANENT_LOGS_DIR}"
 echo "TensorBoard can access logs in real-time at: ${PERMANENT_LOGS_DIR}"
+echo "Note: TensorBoard can continue monitoring during and after training. Lazy unmount will handle cleanup."
 
 # Mount remote logs directory using sshfs for real-time access
 # Options:
@@ -150,15 +151,17 @@ else
 fi
 
 # Unmount the sshfs (PERMANENT_LOGS_DIR will become empty after this)
+# Using lazy unmount (-z) to handle cases where`` TensorBoard or other processes have open file handles
 echo ""
-echo "Unmounting remote logs directory..."
-fusermount -u "${PERMANENT_LOGS_DIR}" 2>/dev/null || umount "${PERMANENT_LOGS_DIR}" 2>/dev/null
+echo "Unmounting remote logs directory (lazy unmount to handle TensorBoard monitoring)..."
+# Brief wait to allow any file operations to complete
+fusermount -uz "${PERMANENT_LOGS_DIR}" 2>/dev/null || umount -l "${PERMANENT_LOGS_DIR}" 2>/dev/null
 if [ $? -eq 0 ]; then
     echo "Remote logs unmounted successfully."
 else
     echo "Warning: Failed to unmount remote logs directory. You may need to manually unmount:"
-    echo "  fusermount -u \"${PERMANENT_LOGS_DIR}\" (Linux)"
-    echo "  umount \"${PERMANENT_LOGS_DIR}\" (macOS)"
+    echo "  fusermount -uz \"${PERMANENT_LOGS_DIR}\" (Linux)"
+    echo "  umount -l \"${PERMANENT_LOGS_DIR}\" (macOS)"
     exit 1
 fi
 
