@@ -37,13 +37,16 @@ REMOTE_TARGET="$6"            # Remote target (user@host)
 TMP_TASK_ID="$(date +%Y%m%d_%H%M%S)_$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)"
 DOCKER_NAME=$TMP_TASK_ID
 
-TMP_REMOTE_ROOT="\${HOME}/.temp_isaac"
-TMP_WORKSPACE="${TMP_REMOTE_ROOT}/${TMP_TASK_ID}"
 # --- DO NOT EDIT BELOW THIS LINE ---
 
 set -e # Exit immediately if any command fails
 
 echo "Connecting to ${REMOTE_TARGET}..."
+
+# Get the actual remote home directory
+REMOTE_HOME=$(ssh ${REMOTE_TARGET} 'echo $HOME')
+TMP_REMOTE_ROOT="${REMOTE_HOME}/.temp_isaac"
+TMP_WORKSPACE="${TMP_REMOTE_ROOT}/${TMP_TASK_ID}"
 
 echo "Creating remote workspace directory..."
 ssh ${REMOTE_TARGET} "if [ -d \"${TMP_WORKSPACE}\" ]; then echo 'Removing existing ${TMP_WORKSPACE}...'; rm -rf \"${TMP_WORKSPACE}\"; fi"
