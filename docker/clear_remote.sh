@@ -41,9 +41,9 @@ ssh ${REMOTE_TARGET} 'docker stop $(docker ps -aq) 2>/dev/null || echo "No runni
 echo "Docker containers stopped."
 echo ""
 
-# Remove the temporary Isaac workspace folder
-echo "Removing temporary workspace folder: ${TMP_REMOTE_ROOT}..."
-ssh ${REMOTE_TARGET} "if [ -d \"${TMP_REMOTE_ROOT}\" ]; then rm -rf \"${TMP_REMOTE_ROOT}\" && echo 'Folder removed successfully'; else echo 'Folder does not exist, nothing to remove'; fi"
+# # Remove the temporary Isaac workspace folder
+# echo "Removing temporary workspace folder: ${TMP_REMOTE_ROOT}..."
+# ssh ${REMOTE_TARGET} "if [ -d \"${TMP_REMOTE_ROOT}\" ]; then rm -rf \"${TMP_REMOTE_ROOT}\" && echo 'Folder removed successfully'; else echo 'Folder does not exist, nothing to remove'; fi"
 
 echo ""
 echo "Cleanup complete!"
